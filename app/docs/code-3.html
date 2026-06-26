@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+
+<html lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Risk Register &amp; Heatmap - RiskoFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Poppins:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#e4f8f3",
+                        "secondary-fixed-dim": "#f0c04d",
+                        "on-background": "#0d1f1c",
+                        "outline": "#707976",
+                        "on-secondary-fixed-variant": "#5b4300",
+                        "secondary": "#785a00",
+                        "on-primary-fixed": "#00201b",
+                        "surface-bright": "#eafef8",
+                        "on-primary-container": "#8ebdb2",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c0c8c5",
+                        "risk-medium": "#F2C14E",
+                        "background-canvas": "#A9CDC9",
+                        "success": "#3E9D7C",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#735500",
+                        "inverse-surface": "#233430",
+                        "surface-tint": "#39665e",
+                        "tertiary-fixed-dim": "#ffb4a3",
+                        "primary": "#01362f",
+                        "tertiary-container": "#792d1c",
+                        "surface-container": "#def2ed",
+                        "inverse-primary": "#a1d0c5",
+                        "primary-container": "#1f4d45",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#7a2e1d",
+                        "secondary-container": "#fdcb57",
+                        "on-surface": "#0d1f1c",
+                        "on-surface-variant": "#404846",
+                        "on-primary": "#ffffff",
+                        "background": "#eafef8",
+                        "background-mint": "#E8F0EC",
+                        "primary-fixed": "#bcece1",
+                        "on-tertiary-container": "#ff987f",
+                        "tertiary-fixed": "#ffdad2",
+                        "surface-dim": "#cbded9",
+                        "tertiary": "#5b1708",
+                        "primary-fixed-dim": "#a1d0c5",
+                        "surface-container-high": "#d9ece7",
+                        "inverse-on-surface": "#e1f5f0",
+                        "on-secondary-fixed": "#251a00",
+                        "text-secondary": "#5F6F6B",
+                        "error": "#D14B3D",
+                        "on-tertiary-fixed": "#3d0600",
+                        "risk-low": "#3E9D7C",
+                        "on-primary-fixed-variant": "#204e46",
+                        "risk-high": "#E8836B",
+                        "on-tertiary": "#ffffff",
+                        "border-hairline": "#DCE6E2",
+                        "surface-container-highest": "#d3e7e2",
+                        "risk-extreme": "#D14B3D",
+                        "surface-muted": "#F4F8F6",
+                        "surface-variant": "#d3e7e2",
+                        "surface": "#FFFFFF",
+                        "secondary-fixed": "#ffdf9d",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "3xl": "2rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "panel-margin": "32px",
+                        "gutter": "24px",
+                        "2xl": "48px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "table-data": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-h3": ["Poppins"],
+                        "label-md": ["Inter"],
+                        "kpi-metric": ["Poppins"],
+                        "display-h1": ["Poppins"],
+                        "headline-h2": ["Poppins"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["11px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "table-data": ["14px", { "lineHeight": "1.4", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "title-h3": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "kpi-metric": ["28px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-h1": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-h2": ["24px", { "lineHeight": "1.25", "fontWeight": "700" }],
+                        "body-sm": ["13px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* 5x5 Heatmap Colors */
+        .heat-low { background-color: #3E9D7C; color: white; }
+        .heat-med { background-color: #F2C14E; color: #5b4300; }
+        .heat-high { background-color: #E8836B; color: white; }
+        .heat-extreme { background-color: #D14B3D; color: white; }
+        
+        /* Bento Card Styles */
+        .bento-card {
+            background-color: theme('colors.surface');
+            border-radius: theme('borderRadius.3xl');
+            border: 1px solid theme('colors.border-hairline');
+            padding: theme('spacing.lg');
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="bg-background-canvas min-h-screen text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="flex h-screen overflow-hidden gap-gutter py-xl px-panel-margin">
+<!-- SideNavBar Component -->
+<nav class="hidden md:flex flex-col p-md gap-lg h-screen w-64 fixed left-0 top-0 bg-background-canvas transition-all duration-300 z-40">
+<div class="flex items-center gap-md px-md pt-md pb-sm">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined" data-weight="fill">bubble_chart</span>
+</div>
+<div>
+<h1 class="font-headline-h2 text-headline-h2 text-primary tracking-tight">RiskoFlow</h1>
+<p class="font-label-sm text-label-sm text-text-secondary text-[12px] font-medium">Enterprise ERM</p>
+</div>
+</div>
+<button class="mx-md mt-sm mb-md bg-primary text-on-primary rounded-full px-xl py-sm font-label-md text-label-md flex items-center justify-center gap-sm hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined">add</span>
+            New Assessment
+        </button>
+<div class="flex-1 flex flex-col gap-xs mt-sm">
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-full transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md bg-primary text-on-primary rounded-full px-md py-sm transition-colors font-label-md text-label-md shadow-sm" href="#">
+<span class="material-symbols-outlined" data-weight="fill">security</span>
+                Risk Registry
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-full transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+                Audit Trail
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-full transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+                Compliance
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-full transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">assessment</span>
+                Reports
+            </a>
+</div>
+<div class="flex flex-col gap-xs mt-auto pt-md border-t border-border-hairline/50">
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-full transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-full transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Logout
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow flex flex-col gap-gutter md:ml-64">
+<!-- TopNavBar Component (Mobile Only) -->
+<!-- Floating Panel Container -->
+<div class="bg-surface rounded-[24px] p-xl flex gap-lg shadow-sm border border-border-hairline min-h-[calc(100vh-144px)] flex-col w-full h-full">
+<!-- Page Header -->
+<div class="flex justify-between items-center w-full mb-gutter border-b border-border-hairline pb-md">
+<div class="flex items-center gap-md">
+<div class="flex flex-col">
+<nav class="flex items-center gap-xs text-text-secondary font-label-sm mb-xs">
+<a class="hover:text-primary transition-colors" href="#">PT Maju Manufaktur</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">Risk Register</span>
+</nav>
+<h1 class="font-display-h1 text-display-h1 text-on-surface tracking-tight">Risk Register</h1>
+</div>
+<div class="relative w-64 ml-lg mt-auto">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">search</span>
+<input class="w-full bg-surface-muted border border-border-hairline rounded-full py-2 pl-xl pr-md font-body-md text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container" placeholder="Search risks..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors border border-border-hairline">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant transition-colors border border-border-hairline">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-fixed overflow-hidden border border-border-hairline">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy7jF-Gfl4_cEus9V5gzY7J1kFPaq0DiMtCkuh4T6gDanpFOkPYQtCxPrN9-KSXIVkbgEiezLpKEFVbbA9AiwINx9WFU1Yr9A-TYGlgC52WB513fV6awKHbrADs7v0qtv9RdT9KYvwRBqdD15xKRbPO3pt_MEBAaKvTcqKO631YvomFqWRQtNWyUCWYNFnGPXD2aHvKrmKB7k1jSbQyvpTDlpA_jOa-HLMdBnzwHmhDRm9vRenYwvUMkNwVbgKiQpCamgbtKV4N28U"/>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center mb-lg">
+<div class="flex gap-sm border-b border-border-hairline pb-xs">
+<a class="px-md py-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-300" href="#">Overview</a>
+<a class="px-md py-sm font-label-md text-label-md bg-primary text-on-primary rounded-full font-bold transition-all duration-300" href="#">Risk Register</a>
+<a class="px-md py-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-300" href="#">Mitigation Plan</a>
+<a class="px-md py-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all duration-300" href="#">Analytics</a>
+</div>
+<div class="flex items-center gap-md">
+<button class="bg-surface border border-border-hairline text-primary rounded-full px-lg py-sm flex items-center gap-sm font-label-md text-label-md hover:bg-surface-muted transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+            ✨ Generate AI
+        </button>
+<button class="bg-primary text-on-primary rounded-full px-lg py-sm flex items-center gap-sm font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            + Risiko Baru
+        </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Data Table (7/12 cols) -->
+<div class="lg:col-span-8 bento-card p-0 overflow-hidden flex flex-col rounded-xl">
+<!-- Filters -->
+<div class="px-xl py-md bg-surface flex flex-wrap gap-sm border-b border-border-hairline">
+<button class="px-md py-sm rounded-full bg-surface-muted text-on-surface border border-border-hairline font-label-md text-label-md flex items-center gap-xs hover:bg-surface-container transition-colors">
+                        Department
+                        <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="px-md py-sm rounded-full bg-surface-muted text-on-surface border border-border-hairline font-label-md text-label-md flex items-center gap-xs hover:bg-surface-container transition-colors">
+                        Category
+                        <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="px-md py-sm rounded-full bg-surface-muted text-on-surface border border-border-hairline font-label-md text-label-md flex items-center gap-xs hover:bg-surface-container transition-colors">
+                        Status
+                        <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+</div>
+<div class="flex-1 overflow-x-auto">
+<table class="w-full text-left border-collapse table-fixed">
+<thead class="sticky top-0 z-10 bg-surface">
+<tr class="border-b border-border-hairline">
+<th class="py-sm px-xl font-label-md text-label-md text-text-secondary uppercase tracking-wider bg-surface-muted w-[35%]">Judul</th>
+<th class="py-sm px-md font-label-md text-label-md text-text-secondary uppercase tracking-wider bg-surface-muted w-[15%]">Dept</th>
+<th class="py-sm px-md font-label-md text-label-md text-text-secondary uppercase tracking-wider bg-surface-muted w-[20%]">Kategori</th>
+<th class="py-sm px-md font-label-md text-label-md text-text-secondary uppercase tracking-wider bg-surface-muted w-[18%]">Level</th>
+<th class="py-sm px-md font-label-md text-label-md text-text-secondary uppercase tracking-wider bg-surface-muted w-[12%]">Status</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data text-[14px] leading-relaxed">
+<!-- Row 1 -->
+<tr class="border-b border-border-hairline hover:bg-surface-muted transition-colors group cursor-pointer">
+<td class="py-md px-xl">
+<div class="font-medium text-on-surface truncate">Data Breach Vulnerability</div>
+<div class="text-text-secondary text-label-sm mt-xs truncate text-[12px] font-medium">External Cyber Attack</div>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[12px] font-medium">IT Sec</span>
+</td>
+<td class="py-md px-md text-on-surface-variant truncate">Operational</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-risk-extreme/10 text-risk-extreme font-label-md text-label-md border border-risk-extreme/20"><span class="w-2 h-2 rounded-full bg-risk-extreme"></span>EXTREME • 20</span>
+</td>
+<td class="py-md px-md">
+<span class="text-on-surface-variant text-label-sm text-[12px] font-medium">In Progress</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-border-hairline hover:bg-surface-muted transition-colors group cursor-pointer">
+<td class="py-md px-xl">
+<div class="font-medium text-on-surface truncate">Vendor Compliance Failure</div>
+<div class="text-text-secondary text-label-sm mt-xs truncate text-[12px] font-medium">Third-party Audit</div>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[12px] font-medium">Procure</span>
+</td>
+<td class="py-md px-md text-on-surface-variant truncate">Compliance</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-risk-high/10 text-risk-high font-label-md text-label-md border border-risk-high/20"><span class="w-2 h-2 rounded-full bg-risk-high"></span>HIGH • 16</span>
+</td>
+<td class="py-md px-md">
+<span class="text-on-surface-variant text-label-sm text-[12px] font-medium">Open</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-border-hairline hover:bg-surface-muted transition-colors group cursor-pointer">
+<td class="py-md px-xl">
+<div class="font-medium text-on-surface truncate">Market Shift Adaptability</div>
+<div class="text-text-secondary text-label-sm mt-xs truncate text-[12px] font-medium">Competitor Analysis</div>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[12px] font-medium">Strategy</span>
+</td>
+<td class="py-md px-md text-on-surface-variant truncate">Strategic</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-risk-medium/10 text-secondary font-label-md text-label-md border border-risk-medium/20"><span class="w-2 h-2 rounded-full bg-risk-medium"></span>MEDIUM • 9</span>
+</td>
+<td class="py-md px-md">
+<span class="text-on-surface-variant text-label-sm text-[12px] font-medium">Monitoring</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="border-b border-border-hairline hover:bg-surface-muted transition-colors group cursor-pointer">
+<td class="py-md px-xl">
+<div class="font-medium text-on-surface truncate">Supply Chain Disruption</div>
+<div class="text-text-secondary text-label-sm mt-xs truncate text-[12px] font-medium">Global Logistics</div>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[12px] font-medium">Ops</span>
+</td>
+<td class="py-md px-md text-on-surface-variant truncate">Operational</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-risk-high/10 text-risk-high font-label-md text-label-md border border-risk-high/20"><span class="w-2 h-2 rounded-full bg-risk-high"></span>HIGH • 15</span>
+</td>
+<td class="py-md px-md">
+<span class="text-on-surface-variant text-label-sm text-[12px] font-medium">Reviewing</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="border-b border-border-hairline hover:bg-surface-muted transition-colors group cursor-pointer">
+<td class="py-md px-xl">
+<div class="font-medium text-on-surface truncate">New Regulation Impact</div>
+<div class="text-text-secondary text-label-sm mt-xs truncate text-[12px] font-medium">Data Privacy Law</div>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[12px] font-medium">Legal</span>
+</td>
+<td class="py-md px-md text-on-surface-variant truncate">Compliance</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-risk-medium/10 text-secondary font-label-md text-label-md border border-risk-medium/20"><span class="w-2 h-2 rounded-full bg-risk-medium"></span>MEDIUM • 12</span>
+</td>
+<td class="py-md px-md">
+<span class="text-on-surface-variant text-label-sm text-[12px] font-medium">Open</span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-muted transition-colors group cursor-pointer">
+<td class="py-md px-xl">
+<div class="font-medium text-on-surface truncate">Employee Turnover</div>
+<div class="text-text-secondary text-label-sm mt-xs truncate text-[12px] font-medium">Key Personnel Retention</div>
+</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[12px] font-medium">HR</span>
+</td>
+<td class="py-md px-md text-on-surface-variant truncate">Strategic</td>
+<td class="py-md px-md">
+<span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-risk-low/10 text-risk-low font-label-md text-label-md border border-risk-low/20"><span class="w-2 h-2 rounded-full bg-risk-low"></span>LOW • 4</span>
+</td>
+<td class="py-md px-md">
+<span class="text-on-surface-variant text-label-sm text-[12px] font-medium">Monitoring</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Right Column: Dashboard Widgets (5/12 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<!-- Top Row: Heatmap -->
+<div class="bento-card flex-1 rounded-xl">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-h2 text-headline-h2 text-on-surface">Risk Distribution</h3>
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+<!-- 5x5 Heatmap Grid -->
+<div class="relative w-full aspect-square max-w-[280px] mx-auto mt-sm">
+<!-- Y Axis Label -->
+<div class="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 font-label-md text-label-md text-text-secondary whitespace-nowrap">Likelihood</div>
+<!-- X Axis Label -->
+<div class="absolute -bottom-8 left-1/2 -translate-x-1/2 font-label-md text-label-md text-text-secondary">Impact</div>
+<div class="grid grid-cols-5 grid-rows-5 w-full h-full gap-xs bg-border-hairline p-xs rounded-xl">
+<!-- Row 5 (Likelihood 5) -->
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">1</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">3</div>
+<div class="heat-extreme rounded-lg flex items-center justify-center font-label-md shadow-sm">2</div>
+<div class="heat-extreme rounded-lg flex items-center justify-center font-label-md shadow-sm">1</div>
+<!-- Row 4 -->
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">2</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">4</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">1</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<div class="heat-extreme rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<!-- Row 3 -->
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">5</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">2</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">3</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">1</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<!-- Row 2 -->
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">8</div>
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">4</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">1</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<div class="heat-high rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<!-- Row 1 (Likelihood 1) -->
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">12</div>
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">5</div>
+<div class="heat-low rounded-lg flex items-center justify-center font-label-md shadow-sm">2</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+<div class="heat-med rounded-lg flex items-center justify-center font-label-md shadow-sm">0</div>
+</div>
+</div>
+<!-- Legend -->
+<div class="mt-xl flex justify-center gap-md font-label-sm text-label-sm text-[12px] font-medium">
+<div class="flex items-center gap-xs"><div class="w-3 h-3 rounded-full bg-risk-low"></div>Low</div>
+<div class="flex items-center gap-xs"><div class="w-3 h-3 rounded-full bg-risk-medium"></div>Med</div>
+<div class="flex items-center gap-xs"><div class="w-3 h-3 rounded-full bg-risk-high"></div>High</div>
+<div class="flex items-center gap-xs"><div class="w-3 h-3 rounded-full bg-risk-extreme"></div>Ext</div>
+</div>
+</div>
+<!-- Middle Row: Stats & Trend -->
+<div class="grid grid-cols-2 gap-gutter">
+<div class="bento-card rounded-xl">
+<h3 class="font-label-md text-label-md text-text-secondary uppercase tracking-wider mb-sm">Risk Trend</h3>
+<div class="flex items-baseline gap-sm mb-xs">
+<span class="font-kpi-metric text-kpi-metric text-primary text-[28px] font-bold">54</span>
+<span class="font-label-sm text-label-sm text-risk-high flex items-center text-[12px] font-medium"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 12%</span>
+</div>
+<p class="font-label-sm text-label-sm text-text-secondary text-[12px] font-medium">vs last month</p>
+<!-- Sparkline placeholder -->
+<div class="mt-auto pt-sm">
+<div class="flex items-end gap-1 h-8 opacity-70">
+<div class="w-1/6 bg-primary-fixed rounded-t-sm h-[40%]"></div>
+<div class="w-1/6 bg-primary-fixed rounded-t-sm h-[60%]"></div>
+<div class="w-1/6 bg-primary-fixed rounded-t-sm h-[50%]"></div>
+<div class="w-1/6 bg-primary-fixed rounded-t-sm h-[80%]"></div>
+<div class="w-1/6 bg-primary-fixed rounded-t-sm h-[70%]"></div>
+<div class="w-1/6 bg-primary rounded-t-sm h-[100%]"></div>
+</div>
+</div>
+</div>
+<div class="bento-card rounded-xl">
+<h3 class="font-label-md text-label-md text-text-secondary uppercase tracking-wider mb-sm">Top Depts by Risk</h3>
+<div class="flex flex-col gap-sm mt-auto">
+<div class="flex justify-between items-center">
+<span class="font-label-sm text-label-sm text-on-surface text-[12px] font-medium">IT Sec</span>
+<span class="font-label-sm text-label-sm font-semibold text-risk-extreme text-[12px] font-medium">12</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-risk-extreme h-1.5 rounded-full" style="width: 80%"></div>
+</div>
+<div class="flex justify-between items-center mt-xs">
+<span class="font-label-sm text-label-sm text-on-surface text-[12px] font-medium">Ops</span>
+<span class="font-label-sm text-label-sm font-semibold text-risk-high text-[12px] font-medium">8</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-risk-high h-1.5 rounded-full" style="width: 60%"></div>
+</div>
+<div class="flex justify-between items-center mt-xs">
+<span class="font-label-sm text-label-sm text-on-surface text-[12px] font-medium">Finance</span>
+<span class="font-label-sm text-label-sm font-semibold text-risk-medium text-[12px] font-medium">5</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-risk-medium h-1.5 rounded-full" style="width: 40%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Recent Activity -->
+<div class="bento-card rounded-xl">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-h2 text-headline-h2 text-on-surface">Aktivitas Terbaru</h3>
+<button class="font-label-sm text-label-sm text-primary hover:underline text-[12px] font-medium">View All</button>
+</div>
+<div class="flex flex-col gap-md">
+<div class="flex gap-sm items-start">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary mt-1 shrink-0">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface text-[14px] leading-relaxed">Status <strong>Data Breach Vulnerability</strong> diubah ke <span class="text-risk-extreme font-medium">In Progress</span></p>
+<p class="font-label-sm text-label-sm text-text-secondary mt-xs text-[12px] font-medium">Oleh Budi S. • 2 jam lalu</p>
+</div>
+</div>
+<div class="flex gap-sm items-start">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant mt-1 shrink-0">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface text-[14px] leading-relaxed">Risiko baru <strong>New Regulation Impact</strong> ditambahkan ke register.</p>
+<p class="font-label-sm text-label-sm text-text-secondary mt-xs text-[12px] font-medium">Oleh Siti A. • 5 jam lalu</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Component -->
+<footer class="mt-auto flex justify-between items-center pt-md w-full border-t border-border-hairline">
+<p class="font-label-sm text-label-sm text-text-secondary text-[12px] font-medium">© 2024 RiskoFlow ERM. All rights reserved.</p>
+<div class="flex gap-md">
+<a class="font-label-sm text-label-sm text-text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100 text-[12px] font-medium" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100 text-[12px] font-medium" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100 text-[12px] font-medium" href="#">Data Governance</a>
+</div>
+</footer>
+</div>
+</main>
+</div>
+</body></html>

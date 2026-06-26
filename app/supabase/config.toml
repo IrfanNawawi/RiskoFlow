@@ -1,0 +1,15 @@
+# Konfigurasi Supabase CLI (minimal). Sesuaikan `project_id` lalu:
+#   supabase link --project-ref <ref>
+#   supabase db push          # terapkan migrations/
+#   supabase db reset         # (lokal) reset + jalankan seed.sql
+#
+# Bila ingin konfigurasi penuh (auth, storage, dst.), jalankan `supabase init`
+# di folder app/ — pertahankan blok migrations & seed di bawah.
+project_id = "riskoflow"
+
+[db]
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]

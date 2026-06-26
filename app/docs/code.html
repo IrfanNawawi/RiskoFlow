@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detail Risiko - Kegagalan Mesin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Poppins:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error-container": "#93000a",
+                      "surface-container-low": "#e4f8f3",
+                      "secondary-fixed-dim": "#f0c04d",
+                      "on-background": "#0d1f1c",
+                      "outline": "#707976",
+                      "on-secondary-fixed-variant": "#5b4300",
+                      "secondary": "#785a00",
+                      "on-primary-fixed": "#00201b",
+                      "surface-bright": "#eafef8",
+                      "on-primary-container": "#8ebdb2",
+                      "error-container": "#ffdad6",
+                      "outline-variant": "#c0c8c5",
+                      "risk-medium": "#F2C14E",
+                      "background-canvas": "#A9CDC9",
+                      "success": "#3E9D7C",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-container": "#735500",
+                      "inverse-surface": "#233430",
+                      "surface-tint": "#39665e",
+                      "tertiary-fixed-dim": "#ffb4a3",
+                      "primary": "#01362f",
+                      "tertiary-container": "#792d1c",
+                      "surface-container": "#def2ed",
+                      "inverse-primary": "#a1d0c5",
+                      "primary-container": "#1f4d45",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed-variant": "#7a2e1d",
+                      "secondary-container": "#fdcb57",
+                      "on-surface": "#0d1f1c",
+                      "on-surface-variant": "#404846",
+                      "on-primary": "#ffffff",
+                      "background": "#eafef8",
+                      "background-mint": "#E8F0EC",
+                      "primary-fixed": "#bcece1",
+                      "on-tertiary-container": "#ff987f",
+                      "tertiary-fixed": "#ffdad2",
+                      "surface-dim": "#cbded9",
+                      "tertiary": "#5b1708",
+                      "primary-fixed-dim": "#a1d0c5",
+                      "surface-container-high": "#d9ece7",
+                      "inverse-on-surface": "#e1f5f0",
+                      "on-secondary-fixed": "#251a00",
+                      "text-secondary": "#5F6F6B",
+                      "error": "#D14B3D",
+                      "on-tertiary-fixed": "#3d0600",
+                      "risk-low": "#3E9D7C",
+                      "on-primary-fixed-variant": "#204e46",
+                      "risk-high": "#E8836B",
+                      "on-tertiary": "#ffffff",
+                      "border-hairline": "#DCE6E2",
+                      "surface-container-highest": "#d3e7e2",
+                      "risk-extreme": "#D14B3D",
+                      "surface-muted": "#F4F8F6",
+                      "surface-variant": "#d3e7e2",
+                      "surface": "#FFFFFF",
+                      "secondary-fixed": "#ffdf9d",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "panel-margin": "32px",
+                      "gutter": "24px",
+                      "2xl": "48px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "sm": "8px",
+                      "xl": "32px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "table-data": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "title-h3": [
+                              "Poppins"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "kpi-metric": [
+                              "Poppins"
+                      ],
+                      "display-h1": [
+                              "Poppins"
+                      ],
+                      "headline-h2": [
+                              "Poppins"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "11px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "table-data": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-h3": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "kpi-metric": [
+                              "28px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-h1": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-h2": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.25",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+</head>
+<body class="min-h-screen text-on-surface font-body-md antialiased p-xl bg-background-canvas">
+<!-- Top Navigation (Hidden as per mandate for transactional/focused detail pages, but keeping a simplified header for context back navigation) -->
+<!-- Main Floating Panel -->
+<main class="rounded-[24px] max-w-[1440px] mx-auto shadow-sm overflow-hidden flex flex-col md:flex-row gap-gutter bg-surface flex-wrap"><div class="w-full flex items-center justify-between p-md border-b border-border-hairline md:col-span-2">
+<button class="flex items-center gap-sm text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label-md text-title-h3 font-semibold text-label-md">Back to Risk Registry</span>
+</button>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold text-[14px]">JD</div>
+</div>
+</div>
+<!-- Left Column: Primary Risk Context -->
+<section class="flex-1 bg-surface rounded-[24px] p-xl shadow-sm border border-border-hairline flex flex-col gap-xl w-full">
+<!-- Header & Badge -->
+<div class="flex flex-col gap-md">
+<div class="flex items-start justify-between">
+<h1 class="font-display-h1 text-display-h1 text-on-surface font-bold">Kegagalan mesin produksi line 2</h1>
+<!-- Risk Badge: Extreme 20 -->
+<div class="flex items-center bg-risk-extreme text-on-error rounded-full px-md py-sm shadow-sm gap-sm shrink-0">
+<span class="font-label-md uppercase tracking-wider text-title-h3 font-semibold text-label-md">Extreme</span>
+<span class="px-sm py-[2px] rounded-full font-label-md tabular-nums bg-primary-container text-title-h3 font-semibold text-label-md">20</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Risiko operasional kritis yang melibatkan penghentian tiba-tiba pada mesin produksi utama Line 2. Kegagalan ini dapat menyebabkan downtime yang signifikan, mengganggu jadwal pengiriman, dan berpotensi merusak bahan baku yang sedang diproses. Diperlukan intervensi segera.
+                </p>
+</div>
+<!-- Status Stepper -->
+<div class="w-full bg-surface-muted rounded-xl p-md border border-border-hairline">
+<div class="flex items-center justify-between relative">
+<!-- Connecting Lines -->
+<div class="absolute top-1/2 left-0 w-full h-[2px] bg-border-hairline -z-10 -translate-y-1/2"></div>
+<div class="absolute top-1/2 left-0 w-[66%] h-[2px] bg-primary -z-10 -translate-y-1/2"></div>
+<!-- Steps -->
+<div class="flex flex-col items-center gap-sm bg-surface-muted px-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-label-sm text-on-surface text-label-md font-medium font-label-md">Identified</span>
+</div>
+<div class="flex flex-col items-center gap-sm bg-surface-muted px-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-label-sm text-on-surface text-label-md font-medium font-label-md">Assessed</span>
+</div>
+<div class="flex flex-col items-center gap-sm bg-surface-muted px-sm">
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-surface text-primary flex items-center justify-center shadow-[0_0_0_4px_rgba(31,77,69,0.1)]">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">build</span>
+</div>
+<span class="font-label-sm text-primary font-bold text-label-md font-medium font-label-md">Mitigating</span>
+</div>
+<div class="flex flex-col items-center gap-sm bg-surface-muted px-sm">
+<div class="w-8 h-8 rounded-full border-2 border-border-hairline bg-surface text-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">monitoring</span>
+</div>
+<span class="font-label-sm text-outline text-label-md font-medium font-label-md">Monitoring</span>
+</div>
+</div>
+</div>
+<!-- Bento Layout: Heatmap & Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Mini Heatmap Context -->
+<div class="border border-border-hairline rounded-xl p-md flex flex-col gap-md bg-surface">
+<h3 class="font-title-h3 text-on-surface text-headline-h2 font-bold font-headline-h2">Risk Matrix Position</h3>
+<div class="flex gap-md items-center h-full">
+<div class="grid grid-cols-5 grid-rows-5 gap-1 w-24 h-24 shrink-0">
+<!-- Dummy 5x5 heatmap, highlighting Extreme cell -->
+<!-- Row 1 -->
+<div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-high rounded-sm"></div><div class="bg-risk-high rounded-sm"></div><div class="bg-risk-extreme rounded-sm shadow-[0_0_8px_rgba(209,75,61,0.6)] border-2 border-on-surface"></div><div class="bg-risk-extreme rounded-sm"></div>
+<!-- Row 2 -->
+<div class="bg-risk-low rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-high rounded-sm"></div><div class="bg-risk-high rounded-sm"></div><div class="bg-risk-extreme rounded-sm"></div>
+<!-- Row 3 -->
+<div class="bg-risk-low rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-high rounded-sm"></div><div class="bg-risk-high rounded-sm"></div>
+<!-- Row 4 -->
+<div class="bg-risk-low rounded-sm"></div><div class="bg-risk-low rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-high rounded-sm"></div>
+<!-- Row 5 -->
+<div class="bg-risk-low rounded-sm"></div><div class="bg-risk-low rounded-sm"></div><div class="bg-risk-low rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div><div class="bg-risk-medium rounded-sm"></div>
+</div>
+<div class="flex flex-col gap-sm">
+<div class="flex items-center gap-sm">
+<span class="font-label-md text-on-surface-variant w-16 text-title-h3 font-semibold text-label-md">Likelihood</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">4 (Likely)</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-label-md text-on-surface-variant w-16 text-title-h3 font-semibold text-label-md">Impact</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">5 (Critical)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Inherent vs Residual -->
+<div class="border border-border-hairline rounded-xl p-md flex flex-col gap-md bg-surface justify-between">
+<h3 class="font-title-h3 text-on-surface text-headline-h2 font-bold font-headline-h2">Risk Shift</h3>
+<div class="flex items-center justify-between px-md py-sm bg-surface-muted rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-sm text-on-surface-variant uppercase text-label-md font-medium font-label-md">Inherent</span>
+<span class="font-kpi-metric text-kpi-metric text-risk-extreme tabular-nums font-bold">20</span>
+</div>
+<span class="material-symbols-outlined text-outline">arrow_forward</span>
+<div class="flex flex-col items-end">
+<span class="font-label-sm text-on-surface-variant uppercase text-label-md font-medium font-label-md">Target Residual</span>
+<span class="font-kpi-metric text-kpi-metric text-risk-medium tabular-nums font-bold">12</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Mitigation List -->
+<div class="flex flex-col gap-md">
+<h3 class="font-title-h3 text-on-surface border-b border-border-hairline pb-sm text-headline-h2 font-bold font-headline-h2">Rencana Mitigasi</h3>
+<div class="flex flex-col gap-sm">
+<!-- Task Item -->
+<div class="flex items-center justify-between p-md border border-border-hairline rounded-xl hover:bg-surface-muted transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">build_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-on-surface text-title-h3 font-semibold text-label-md">Preventive Maintenance Schedule Update</span>
+<span class="font-label-sm text-on-surface-variant text-label-md font-medium font-label-md">Due: 24 Oct 2024 • Assignee: Tech Team A</span>
+</div>
+</div>
+<span class="px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-md font-medium font-label-md">In Progress</span>
+</div>
+<!-- Task Item -->
+<div class="flex items-center justify-between p-md border border-border-hairline rounded-xl hover:bg-surface-muted transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface flex items-center justify-center border border-border-hairline bg-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-on-surface text-title-h3 font-semibold text-label-md">Stockpile Critical Spare Parts</span>
+<span class="font-label-sm text-on-surface-variant text-label-md font-medium font-label-md">Due: 30 Oct 2024 • Assignee: Procurement</span>
+</div>
+</div>
+<span class="px-sm py-xs rounded-full bg-surface-variant text-on-surface font-label-sm text-label-md font-medium font-label-md">Not Started</span>
+</div>
+</div>
+</div>
+<!-- Incidents List -->
+<div class="flex flex-col gap-md">
+<h3 class="font-title-h3 text-on-surface border-b border-border-hairline pb-sm text-headline-h2 font-bold font-headline-h2">Insiden Terkait</h3>
+<div class="overflow-x-auto border border-border-hairline rounded-xl">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-muted border-b border-border-hairline">
+<tr>
+<th class="font-label-md text-on-surface-variant p-sm text-title-h3 font-semibold text-label-md">Tanggal</th>
+<th class="font-label-md text-on-surface-variant p-sm text-title-h3 font-semibold text-label-md">Deskripsi</th>
+<th class="font-label-md text-on-surface-variant p-sm text-right text-title-h3 font-semibold text-label-md">Downtime (Jam)</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data">
+<tr class="border-b border-border-hairline hover:bg-surface-muted">
+<td class="p-sm tabular-nums text-on-surface-variant text-body-md font-body-md">12 Sep 2024</td>
+<td class="p-sm text-on-surface text-body-md font-body-md">Overheating motor utama</td>
+<td class="p-sm text-right tabular-nums text-error font-medium text-body-md font-body-md">4.5</td>
+</tr>
+<tr class="hover:bg-surface-muted">
+<td class="p-sm tabular-nums text-on-surface-variant text-body-md font-body-md">03 Aug 2024</td>
+<td class="p-sm text-on-surface text-body-md font-body-md">Sensor alignment error</td>
+<td class="p-sm text-right tabular-nums text-risk-medium font-medium text-body-md font-body-md">1.2</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Right Column: Monitoring, Compliance, AI -->
+<aside class="w-full md:w-[360px] shrink-0 flex flex-col gap-gutter">
+<!-- AI Assist Card (Glassmorphism inspired) -->
+<div class="relative overflow-hidden rounded-[24px] border border-primary-fixed bg-surface p-md shadow-sm flex flex-col gap-md isolate">
+<!-- Decorative background blob -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary-fixed rounded-full blur-[40px] opacity-30 -z-10"></div>
+<div class="flex items-center gap-sm text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h3 class="font-title-h3 text-headline-h2 font-bold font-headline-h2">AI Suggestion</h3>
+</div>
+<div class="bg-surface-muted/50 rounded-xl p-sm border border-border-hairline backdrop-blur-sm">
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">
+                        Berdasarkan pola insiden masa lalu, disarankan untuk mempercepat instalasi sensor getaran IoT pada motor utama sebelum akhir bulan untuk deteksi anomali preventif.
+                    </p>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-outline text-label-md font-medium font-label-md">Confidence Score:</span>
+<span class="px-sm py-xs bg-success/10 text-success rounded-full font-label-sm tabular-nums text-label-md font-medium font-label-md">92%</span>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary rounded-full py-sm font-label-md hover:bg-primary-container transition-colors shadow-sm text-title-h3 font-semibold text-label-md">
+                    Draft Mitigation Action
+                </button>
+</div>
+<!-- Pemantauan (Monitoring) KRI -->
+<div class="bg-surface border border-border-hairline rounded-[24px] p-md shadow-sm flex flex-col gap-md">
+<h3 class="font-title-h3 text-on-surface flex items-center gap-sm text-headline-h2 font-bold font-headline-h2">
+<span class="material-symbols-outlined text-outline">timeline</span>
+                    Pemantauan (KRI)
+                </h3>
+<div class="flex flex-col gap-sm">
+<div class="flex flex-col p-sm border border-border-hairline rounded-lg bg-surface-muted">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-sm text-on-surface-variant text-label-md font-medium font-label-md">Suhu Motor Rata-rata</span>
+<span class="font-label-md text-error tabular-nums text-title-h3 font-semibold text-kpi-metric font-kpi-metric font-bold text-label-md">85°C</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 85%"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="font-label-sm text-[9px] text-outline text-label-md font-medium font-label-md">Normal: &lt; 70°C</span>
+</div>
+</div>
+<div class="flex flex-col p-sm border border-border-hairline rounded-lg bg-surface">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-sm text-on-surface-variant text-label-md font-medium font-label-md">MTBF (Mean Time Between Failures)</span>
+<span class="font-label-md text-risk-medium tabular-nums text-title-h3 font-semibold text-kpi-metric font-kpi-metric font-bold text-label-md">32 Hari</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-risk-medium h-1.5 rounded-full" style="width: 40%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Kepatuhan Chips -->
+<div class="bg-surface border border-border-hairline rounded-[24px] p-md shadow-sm flex flex-col gap-md">
+<h3 class="font-title-h3 text-on-surface flex items-center gap-sm text-headline-h2 font-bold font-headline-h2">
+<span class="material-symbols-outlined text-outline">gavel</span>
+                    Kepatuhan Terkait
+                </h3>
+<div class="flex flex-wrap gap-sm">
+<span class="px-sm py-xs rounded-full border border-outline-variant bg-surface-muted text-on-surface-variant font-label-sm flex items-center gap-xs text-label-md font-medium font-label-md">
+<span class="material-symbols-outlined text-[14px]">description</span>
+                        ISO 9001:2015
+                    </span>
+<span class="px-sm py-xs rounded-full border border-outline-variant bg-surface-muted text-on-surface-variant font-label-sm flex items-center gap-xs text-label-md font-medium font-label-md">
+<span class="material-symbols-outlined text-[14px]">policy</span>
+                        SOP Maint-04
+                    </span>
+<span class="px-sm py-xs rounded-full border border-error/30 bg-error-container text-on-error-container font-label-sm flex items-center gap-xs text-label-md font-medium font-label-md">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                        OSHA Reg 29
+                    </span>
+</div>
+</div>
+</aside>
+</main>
+</body></html>
