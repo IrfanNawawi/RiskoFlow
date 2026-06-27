@@ -53,11 +53,14 @@ export function TreatmentFormModal({
   onClose,
   riskId,
   treatment,
+  prefill,
 }: {
   open: boolean;
   onClose: () => void;
   riskId: string;
   treatment?: Treatment;
+  /** Nilai awal mode tambah (mis. usulan AI, FR-AI-3). Diabaikan saat `treatment` (edit). */
+  prefill?: Partial<TreatmentInput>;
 }) {
   const users = useStore(useShallow((s) => s.users));
   const addTreatment = useAddTreatment();
@@ -76,7 +79,7 @@ export function TreatmentFormModal({
 
   useEffect(() => {
     if (!open) return;
-    reset(treatment ? toForm(treatment) : EMPTY);
+    reset(treatment ? toForm(treatment) : { ...EMPTY, ...prefill });
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -85,7 +88,7 @@ export function TreatmentFormModal({
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose, reset, treatment]);
+  }, [open, onClose, reset, treatment, prefill]);
 
   if (!open) return null;
 

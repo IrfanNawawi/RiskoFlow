@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useShallow } from "zustand/react/shallow";
@@ -8,6 +8,7 @@ import { RiskBadge } from "@/components/RiskBadge";
 import { CATEGORY_META, RISK_LEVEL_META } from "@/lib/risk";
 import { idrCompact, relativeDays, fmtDate } from "@/lib/format";
 import { buildRiskExportRows, exportRowsToXlsx, todayStamp } from "@/lib/export";
+import { GenerateAiModal } from "@/features/ai";
 import type { RiskLevel } from "@/data/types";
 
 export function DashboardPage() {
@@ -16,6 +17,7 @@ export function DashboardPage() {
   const company = useStore((s) => s.activeCompany());
   const deptById = useStore((s) => s.deptById);
   const userById = useStore((s) => s.userById);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const metrics = useMemo(() => {
     const byLevel: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 0, HIGH: 0, EXTREME: 0 };
@@ -90,7 +92,7 @@ export function DashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" icon="download" onClick={onExport}>Ekspor</Button>
-          <Link to="/risks"><Button icon="auto_awesome">Generate AI</Button></Link>
+          <Button icon="auto_awesome" onClick={() => setAiOpen(true)}>Generate AI</Button>
         </div>
       </div>
 
@@ -138,7 +140,7 @@ export function DashboardPage() {
             {/* Category donut */}
             <Card className="flex flex-1 flex-col p-5">
               <SectionTitle className="mb-2">Distribusi per Kategori</SectionTitle>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center gap-4 sm:flex-row">
                 <div className="h-44 w-44 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -149,7 +151,7 @@ export function DashboardPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-1 flex-col gap-2">
+                <div className="flex w-full flex-1 flex-col gap-2">
                   {categoryData.map((c, i) => (
                     <div key={c.key} className="flex items-center gap-2 text-[13px]">
                       <span className="h-3 w-3 rounded-[3px]" style={{ backgroundColor: CAT_COLORS[i % CAT_COLORS.length] }} />
@@ -220,6 +222,8 @@ export function DashboardPage() {
           <AgendaTimeline items={agenda} />
         </aside>
       </div>
+
+      <GenerateAiModal open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   );
 }

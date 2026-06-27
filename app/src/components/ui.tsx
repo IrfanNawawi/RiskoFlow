@@ -110,6 +110,52 @@ export function SectionTitle({
   );
 }
 
+/** Footer paginasi client-side; menyembunyikan diri bila hanya satu halaman. */
+export function Pagination({
+  page,
+  pageCount,
+  total,
+  pageSize,
+  onChange,
+}: {
+  page: number;
+  pageCount: number;
+  total: number;
+  pageSize: number;
+  onChange: (page: number) => void;
+}) {
+  if (pageCount <= 1) return null;
+  const from = (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-border-hairline px-4 py-3">
+      <p className="text-[12px] text-text-secondary">
+        Menampilkan <span className="font-medium text-on-surface-variant tabular-nums">{from}–{to}</span> dari{" "}
+        <span className="font-medium text-on-surface-variant tabular-nums">{total}</span>
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onChange(page - 1)}
+          disabled={page <= 1}
+          aria-label="Halaman sebelumnya"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-muted hover:text-primary disabled:opacity-40 disabled:hover:bg-transparent"
+        >
+          <Icon name="chevron_left" size={18} />
+        </button>
+        <span className="px-1 text-[12px] font-medium tabular-nums text-on-surface-variant">{page} / {pageCount}</span>
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page >= pageCount}
+          aria-label="Halaman berikutnya"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-muted hover:text-primary disabled:opacity-40 disabled:hover:bg-transparent"
+        >
+          <Icon name="chevron_right" size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function EmptyState({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">

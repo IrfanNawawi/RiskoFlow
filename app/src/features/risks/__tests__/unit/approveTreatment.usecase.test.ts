@@ -7,6 +7,7 @@ function makeRepo() {
     list: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
+    addSuggested: vi.fn(),
     confirmAiSuggested: vi.fn(),
     addTreatment: vi.fn(),
     updateTreatment: vi.fn(),

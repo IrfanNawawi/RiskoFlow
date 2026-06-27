@@ -20,6 +20,17 @@ export const useCreateRisk = () => {
   });
 };
 
+/** Tambah draft risiko hasil AI (FR-AI-1) → invalidate. Mengembalikan id baru. */
+export const useAddSuggestedRisks = () => {
+  const repo = useRiskRepository();
+  const qc = useQueryClient();
+  const companyId = useStore((s) => s.activeCompanyId);
+  return useMutation({
+    mutationFn: (inputs: NewRiskInput[]) => repo.addSuggested(inputs),
+    onSuccess: () => qc.invalidateQueries({ queryKey: riskKeys.all(companyId) }),
+  });
+};
+
 /** Konfirmasi draft AI (FR-RISK-5) → invalidate daftar + detail. */
 export const useConfirmAiRisk = () => {
   const repo = useRiskRepository();

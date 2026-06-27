@@ -25,6 +25,10 @@ export class RiskMockDataSource {
     return useStore.getState().addRisk({ ...input, description: input.description ?? "" });
   }
 
+  async addSuggested(inputs: NewRiskInput[]): Promise<string[]> {
+    return useStore.getState().addAiSuggestedRisks(inputs.map((i) => ({ ...i, description: i.description ?? "" })));
+  }
+
   async confirmAiSuggested(id: string): Promise<void> {
     useStore.getState().confirmAiRisk(id);
   }

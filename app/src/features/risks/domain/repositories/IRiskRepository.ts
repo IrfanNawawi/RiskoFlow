@@ -18,6 +18,8 @@ export interface IRiskRepository {
   getById(id: string): Promise<Risk | undefined>;
   /** Buat risiko baru; kembalikan id-nya. */
   create(input: NewRiskInput): Promise<string>;
+  /** Tambah beberapa draft risiko hasil AI (FR-AI-1) — `aiSuggested=true`; kembalikan id. */
+  addSuggested(inputs: NewRiskInput[]): Promise<string[]>;
   /** Konfirmasi draft AI menjadi risiko aktif (FR-RISK-5). */
   confirmAiSuggested(id: string): Promise<void>;
   /** Tambah rencana mitigasi ke risiko (FR-TREAT-1); kembalikan id treatment. */

@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/data/store";
-import { Card, Icon, Button, SectionTitle } from "@/components/ui";
+import { Card, Icon, Button, SectionTitle, Pagination } from "@/components/ui";
 import { RiskBadge } from "@/components/RiskBadge";
 import { Heatmap, HeatmapLegend } from "@/components/Heatmap";
 import { CATEGORY_META, SOURCE_META, STATUS_META } from "@/lib/risk";
@@ -10,10 +10,13 @@ import { cn, relativeDays } from "@/lib/format";
 import { buildRiskExportRows, exportRowsToXlsx, exportRowsToPdf, todayStamp } from "@/lib/export";
 import { useRisks } from "./presentation/hooks/useRisks";
 import { useConfirmAiRisk } from "./presentation/hooks/useRiskMutations";
+import { GenerateAiModal } from "@/features/ai";
 import type { Risk } from "@/data/types";
 
 const routeApi = getRouteApi("/app/risks");
 type FilterKey = "dept" | "category" | "status" | "level";
+
+const PAGE_SIZE = 8;
 
 export function RiskRegisterPage() {
   // Filter tersimpan sebagai typed URL search params (FR-RISK-2), tervalidasi Zod di route.
@@ -31,6 +34,7 @@ export function RiskRegisterPage() {
   const deptById = useStore((s) => s.deptById);
   const userById = useStore((s) => s.userById);
   const confirmAi = useConfirmAiRisk();
+  const [aiOpen, setAiOpen] = useState(false);
 
   const setFilter = (key: FilterKey, value: string) =>
     navigate({ replace: true, search: (prev) => ({ ...prev, [key]: value || undefined }) });
@@ -61,6 +65,15 @@ export function RiskRegisterPage() {
 
   const activeFilters = [dept, category, status, level].filter(Boolean).length + (cellL ? 1 : 0);
 
+  // Paginasi client-side agar tabel tetap ringkas; reset ke halaman 1 saat filter berubah.
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [dept, category, status, level, cellL, cellI]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page],
+  );
+
   // Ekspor menghormati filter aktif (FR-DASH-5): hanya baris `filtered` yang diekspor.
   const exportRows = () =>
     buildRiskExportRows(filtered, (id) => deptById(id)?.name ?? "—", (id) => userById(id)?.name ?? "—");
@@ -79,9 +92,11 @@ export function RiskRegisterPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" icon="table_view" onClick={onExportXlsx}>XLSX</Button>
           <Button variant="outline" icon="picture_as_pdf" onClick={onExportPdf}>PDF</Button>
-          <Button variant="outline" icon="auto_awesome">Generate AI</Button>
+          <Button variant="outline" icon="auto_awesome" onClick={() => setAiOpen(true)}>Generate AI</Button>
         </div>
       </div>
+
+      <GenerateAiModal open={aiOpen} onClose={() => setAiOpen(false)} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
         {/* Table + filters */}
@@ -112,13 +127,14 @@ export function RiskRegisterPage() {
                 </tr>
               </thead>
               <tbody className="text-[14px]">
-                {filtered.map((r) => <RiskRow key={r.id} r={r} deptName={deptById(r.departmentId)?.name ?? "—"} ownerInitials={userById(r.ownerId)?.initials ?? ""} onConfirm={() => confirmAi.mutate(r.id)} />)}
+                {paged.map((r) => <RiskRow key={r.id} r={r} deptName={deptById(r.departmentId)?.name ?? "—"} ownerInitials={userById(r.ownerId)?.initials ?? ""} onConfirm={() => confirmAi.mutate(r.id)} />)}
                 {filtered.length === 0 && (
                   <tr><td colSpan={6} className="px-4 py-12 text-center text-[14px] text-text-secondary">Tidak ada risiko yang cocok dengan filter.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          <Pagination page={page} pageCount={pageCount} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
         </Card>
 
         {/* Side heatmap */}

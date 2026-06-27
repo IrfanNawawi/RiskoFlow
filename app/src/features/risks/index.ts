@@ -6,6 +6,7 @@ export { useRisks, useRisk } from "./presentation/hooks/useRisks";
 export { riskKeys } from "./presentation/hooks/riskKeys";
 export {
   useCreateRisk,
+  useAddSuggestedRisks,
   useConfirmAiRisk,
   useAddTreatment,
   useUpdateTreatment,

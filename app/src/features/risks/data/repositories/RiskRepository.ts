@@ -27,6 +27,10 @@ export class RiskRepository implements IRiskRepository {
     return this.ds.create(input);
   }
 
+  addSuggested(inputs: NewRiskInput[]): Promise<string[]> {
+    return this.ds.addSuggested(inputs);
+  }
+
   confirmAiSuggested(id: string): Promise<void> {
     return this.ds.confirmAiSuggested(id);
   }

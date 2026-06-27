@@ -24,7 +24,7 @@ Status implementasi terhadap [PRD.md](PRD.md) (v1.6). Diperbarui **2026-06-26**.
 | Code splitting (lazy routes + vendor chunk) | ✅ |
 | Backend Supabase: Postgres + skema/migrations + RLS (permissive) + RPC + trigger invarian | 🟡 — terpasang & dual-mode; **Auth ⛔**, Edge Functions/Cron/Queues/Vault 🎯 |
 | Test E2E (Playwright) + RLS (pgTAP) | ⛔ 🎯 |
-| AI Assistant (Edge Function + Gemini) | ⛔ 🎯 |
+| AI Assistant — **generate risiko (mock lokal)** jalan; Edge Function + Gemini 🎯 | 🟡 |
 | Notifikasi (in-app + email) | ⛔ 🎯 |
 
 ---
@@ -40,7 +40,7 @@ Status implementasi terhadap [PRD.md](PRD.md) (v1.6). Diperbarui **2026-06-26**.
 | Respons & Mitigasi | §3.5 / FR-TREAT | ✅ form tambah/ubah treatment + approve ACCEPT + **prompt residual otomatis** saat treatment `done` (FR-TREAT-6) | ✅ via [`risks`](features/risks.md) repo + use-case | ⛔ | 🟡 |
 | Pemantauan Berkelanjutan | §3.6 / FR-MON | ✅ Catat Review (FR-MON-2, reopen FR-MON-5) + **CRUD KRI + alert terlampaui (FR-MON-4)**; **belum** cron jatuh tempo (🎯) | ✅ via [`risks`](features/risks.md) repo | ⛔ (cron 🎯) | 🟡 |
 | Incident / Loss-Event Log | §3.7 / FR-INC | ✅ catat insiden + approve close + **CTA buat-risiko-dari-insiden + auto-link (FR-INC-2)**; **belum** soft delete | ✅ **domain/data/presentation** ([doc](features/incidents.md)) | ⛔ | 🟡 |
-| AI Assistant | §3.8 / FR-AI | 🟡 placeholder UI statis + toggle `aiEnabled`; **belum** integrasi nyata | ⛔ | ⛔ 🎯 | ⛔ |
+| AI Assistant | §3.8 / FR-AI | ✅ **Generate risiko** (FR-AI-1) + **saran mitigasi** (FR-AI-3) → draft/usulan wajib konfirmasi (FR-AI-5) + opt-out (FR-AI-7), **mock lokal**; **belum** saran penilaian (FR-AI-2) & pemantauan (FR-AI-4) | ✅ service [`ai`](features/ai.md) (mock) | ⛔ Edge Function/Gemini 🎯 | 🟡 |
 | Kepatuhan + Library Regulasi | §3.9 / FR-COMP | ✅ seed 3 industri + mapping m:n (FR-COMP-2) + CRUD custom (FR-COMP-1) + **duplikasi sistem→custom (FR-COMP-6)** + **laporan gap `.xlsx`/`.pdf` (FR-COMP-4)** | ✅ list + CRUD + duplicate + setMapping ([doc](features/compliance.md)) | ⛔ | 🟡 |
 | Notifikasi (in-app + email) | §3.10 / FR-NOTIF | ⛔ | ⛔ | ⛔ 🎯 | ⛔ |
 | Dashboard & Reporting | §3.11 / FR-DASH | ✅ dashboard + **ekspor `.xlsx`/`.pdf`** (Register hormati filter aktif, FR-DASH-5); 🟡 Reports builder UI masih mock | 🟡 dashboard baca store/risks | ⛔ | 🟡 |

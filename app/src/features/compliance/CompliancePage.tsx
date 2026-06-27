@@ -10,6 +10,8 @@ import { ComplianceMappingModal } from "./presentation/components/ComplianceMapp
 import { ComplianceFormModal } from "./presentation/components/ComplianceFormModal";
 import type { ComplianceStatus, ComplianceRequirement } from "@/data/types";
 
+const FRAMEWORK_STEP = 4;
+
 const STATUS_META: Record<ComplianceStatus, { label: string; cls: string; bar: string }> = {
   compliant: { label: "Compliant", cls: "border-risk-low/30 bg-risk-low/10 text-risk-low", bar: "var(--color-risk-low)" },
   partial: { label: "Partial", cls: "border-risk-medium/40 bg-risk-medium/15 text-secondary", bar: "var(--color-risk-medium)" },
@@ -24,6 +26,9 @@ export function CompliancePage() {
   const duplicateCompliance = useDuplicateCompliance();
   const [editing, setEditing] = useState<ComplianceRequirement | null>(null);
   const [formModal, setFormModal] = useState<{ open: boolean; edit?: ComplianceRequirement }>({ open: false });
+  const [visible, setVisible] = useState(FRAMEWORK_STEP);
+  const shown = items.slice(0, visible);
+  const remaining = items.length - shown.length;
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -94,7 +99,7 @@ export function CompliancePage() {
 
       <h2 className="font-display text-[18px] font-semibold text-on-surface">Active Frameworks</h2>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {items.map((c) => (
+        {shown.map((c) => (
           <FrameworkCard
             key={c.id}
             c={c}
@@ -109,6 +114,13 @@ export function CompliancePage() {
           />
         ))}
       </div>
+      {remaining > 0 && (
+        <div className="flex justify-center">
+          <Button variant="outline" icon="expand_more" onClick={() => setVisible((v) => v + FRAMEWORK_STEP)}>
+            Tampilkan lebih banyak (sisa {remaining})
+          </Button>
+        </div>
+      )}
 
       <ComplianceMappingModal requirement={editing} risks={risks} onClose={() => setEditing(null)} />
       <ComplianceFormModal open={formModal.open} onClose={() => setFormModal({ open: false })} requirement={formModal.edit} />
@@ -119,7 +131,7 @@ export function CompliancePage() {
 function FrameworkCard({ c, riskCount, canEdit, onManage, onEdit, onDelete, onDuplicate }: { c: ComplianceRequirement; riskCount: number; canEdit: boolean; onManage: () => void; onEdit: () => void; onDelete: () => void; onDuplicate: () => void }) {
   const meta = STATUS_META[c.status];
   return (
-    <Card className="flex flex-col gap-4 p-5">
+    <Card className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted text-primary">
@@ -127,7 +139,7 @@ function FrameworkCard({ c, riskCount, canEdit, onManage, onEdit, onDelete, onDu
           </div>
           <div>
             <p className="font-display text-[16px] font-semibold text-on-surface">{c.regulationName}</p>
-            <p className="text-[12px] text-text-secondary">{c.description}</p>
+            <p className="line-clamp-1 text-[12px] text-text-secondary">{c.description}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">

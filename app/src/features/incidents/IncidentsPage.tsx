@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/data/store";
-import { Card, Icon, Button } from "@/components/ui";
+import { Card, Icon, Button, Pagination } from "@/components/ui";
 import { fmtDate, idr, idrCompact, cn } from "@/lib/format";
 import { useIncidents } from "./presentation/hooks/useIncidents";
 import { useApproveIncidentClose, useLinkIncidentRisk } from "./presentation/hooks/useIncidentMutations";
@@ -14,6 +14,8 @@ const STATUS_CLS: Record<string, string> = {
   closed: "bg-risk-low/15 text-risk-low",
 };
 
+const PAGE_SIZE = 8;
+
 export function IncidentsPage() {
   const { data: incidents = [] } = useIncidents();
   const deptById = useStore((s) => s.deptById);
@@ -24,6 +26,13 @@ export function IncidentsPage() {
   const linkRisk = useLinkIncidentRisk();
   const [modalOpen, setModalOpen] = useState(false);
   const [createFor, setCreateFor] = useState<Incident | null>(null);
+  const [page, setPage] = useState(1);
+
+  const pageCount = Math.max(1, Math.ceil(incidents.length / PAGE_SIZE));
+  const paged = useMemo(
+    () => incidents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [incidents, page],
+  );
 
   const stats = useMemo(() => {
     const loss = incidents.filter((i) => i.type === "LOSS").reduce((s, i) => s + i.lossAmount, 0);
@@ -76,7 +85,7 @@ export function IncidentsPage() {
             </tr>
           </thead>
           <tbody className="text-[14px]">
-            {incidents.map((i) => {
+            {paged.map((i) => {
               const needsApproval = i.type === "LOSS" && i.lossAmount >= threshold && i.status !== "closed";
               return (
                 <tr key={i.id} className="border-b border-border-hairline last:border-0 align-top hover:bg-surface-muted">
@@ -125,6 +134,7 @@ export function IncidentsPage() {
           </tbody>
         </table>
         </div>
+        <Pagination page={page} pageCount={pageCount} total={incidents.length} pageSize={PAGE_SIZE} onChange={setPage} />
       </Card>
     </div>
   );

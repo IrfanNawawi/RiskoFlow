@@ -136,9 +136,9 @@ export function ReportsPage() {
             )}
           </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => exportRegister("XLS", "Custom Report")}>Ekspor XLSX</Button>
-          <Button icon="rocket_launch" onClick={() => exportRegister("PDF", "Custom Report")}>Generate PDF</Button>
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => exportRegister("XLS", "Custom Report")}>Ekspor XLSX</Button>
+          <Button icon="rocket_launch" className="flex-1 sm:flex-none" onClick={() => exportRegister("PDF", "Custom Report")}>Generate PDF</Button>
         </div>
       </Card>
     </div>

@@ -14,6 +14,8 @@ import { useApproveTreatment, useRemoveKri } from "./presentation/hooks/useRiskM
 import { TreatmentFormModal } from "./presentation/components/TreatmentFormModal";
 import { ReviewModal } from "./presentation/components/ReviewModal";
 import { KriFormModal } from "./presentation/components/KriFormModal";
+import { useSuggestTreatment } from "@/features/ai";
+import type { TreatmentInput } from "./validation/treatment.schema";
 import type { Treatment, Kri } from "@/data/types";
 
 const STRATEGY_META: Record<string, { label: string; icon: string }> = {
@@ -36,7 +38,8 @@ export function RiskDetailPage() {
   const aiEnabled = useStore((s) => s.activeCompany().aiEnabled);
   const approve = useApproveTreatment();
   const canEdit = useStore((s) => s.can("edit"));
-  const [treatmentModal, setTreatmentModal] = useState<{ open: boolean; edit?: Treatment }>({ open: false });
+  const [treatmentModal, setTreatmentModal] = useState<{ open: boolean; edit?: Treatment; prefill?: Partial<TreatmentInput> }>({ open: false });
+  const suggestTreatment = useSuggestTreatment();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [kriModal, setKriModal] = useState<{ open: boolean; edit?: Kri }>({ open: false });
   const removeKri = useRemoveKri();
@@ -212,16 +215,46 @@ export function RiskDetailPage() {
             </div>
             {aiEnabled ? (
               <>
-                <div className="rounded-[12px] border border-border-hairline bg-surface-muted/60 p-3">
-                  <p className="mb-2 text-[13px] leading-relaxed text-on-surface-variant">
-                    Berdasarkan pola insiden masa lalu, disarankan mempercepat instalasi sensor getaran IoT sebelum akhir bulan untuk deteksi anomali preventif.
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-outline">Confidence Score</span>
-                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-success">92%</span>
+                {suggestTreatment.data ? (
+                  <div className="rounded-[12px] border border-border-hairline bg-surface-muted/60 p-3">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-fixed px-2 py-0.5 text-[11px] font-semibold text-primary">
+                        <Icon name={STRATEGY_META[suggestTreatment.data.strategy].icon} size={13} /> {STRATEGY_META[suggestTreatment.data.strategy].label}
+                      </span>
+                      <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-success">{suggestTreatment.data.confidence}%</span>
+                    </div>
+                    <p className="text-[13px] leading-relaxed text-on-surface-variant">{suggestTreatment.data.description}</p>
+                    {canEdit && (
+                      <Button
+                        className="mt-2 w-full"
+                        size="sm"
+                        icon="playlist_add"
+                        onClick={() =>
+                          setTreatmentModal({
+                            open: true,
+                            prefill: { strategy: suggestTreatment.data!.strategy, description: suggestTreatment.data!.description },
+                          })
+                        }
+                      >
+                        Gunakan & edit
+                      </Button>
+                    )}
                   </div>
-                </div>
-                <Button className="mt-3 w-full" size="sm" icon="draft">Draft Mitigation Action</Button>
+                ) : (
+                  <p className="mb-1 text-[13px] leading-relaxed text-text-secondary">
+                    Minta AI menyarankan strategi mitigasi untuk risiko ini. Usulan tetap perlu Anda konfirmasi.
+                  </p>
+                )}
+                <Button
+                  className="mt-3 w-full"
+                  size="sm"
+                  variant={suggestTreatment.data ? "outline" : "primary"}
+                  icon="auto_awesome"
+                  onClick={() => suggestTreatment.mutate({ riskTitle: risk.title, category: risk.category, level: active.level })}
+                  disabled={suggestTreatment.isPending}
+                >
+                  {suggestTreatment.isPending ? "Menganalisis…" : suggestTreatment.data ? "Sarankan ulang" : "Sarankan Mitigasi"}
+                </Button>
               </>
             ) : (
               <p className="rounded-[12px] bg-surface-muted p-3 text-[13px] text-text-secondary">Fitur AI dinonaktifkan untuk perusahaan ini (opt-out). Alur manual tetap berjalan.</p>
@@ -318,6 +351,7 @@ export function RiskDetailPage() {
         onClose={() => setTreatmentModal({ open: false })}
         riskId={risk.id}
         treatment={treatmentModal.edit}
+        prefill={treatmentModal.prefill}
       />
       <ReviewModal open={reviewOpen} onClose={() => setReviewOpen(false)} risk={risk} />
       <KriFormModal open={kriModal.open} onClose={() => setKriModal({ open: false })} riskId={risk.id} kri={kriModal.edit} />

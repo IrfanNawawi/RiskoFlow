@@ -128,6 +128,7 @@ interface State {
   demoRole: MembershipRole | "all";
   toggleAi: () => void;
   addRisk: (input: NewRiskInput) => string;
+  addAiSuggestedRisks: (inputs: NewRiskInput[]) => string[];
   confirmAiRisk: (riskId: string) => void;
   addTreatment: (riskId: string, input: TreatmentInput) => string;
   updateTreatment: (riskId: string, treatmentId: string, input: TreatmentInput) => void;
@@ -283,6 +284,46 @@ export const useStore = create<State>((set, get) => ({
       audit: [logAudit(get, { actor: nameOf(get), action: "CREATE", entity: `Risk ${risk.code}`, detail: `Risiko baru "${risk.title}" dibuat (${level})` }), ...s.audit],
     }));
     return newId;
+  },
+
+  addAiSuggestedRisks: (inputs) => {
+    const baseNum = get().risks.length + 80;
+    const now = Date.now();
+    // Draft AI (FR-RISK-5): aiSuggested=true, status "identified", dikecualikan dari
+    // agregat/heatmap sampai dikonfirmasi manusia.
+    const drafts: Risk[] = inputs.map((input, i) => ({
+      id: `r-${now}-${i}`,
+      code: `R-${String(baseNum + i).padStart(3, "0")}`,
+      companyId: get().activeCompanyId,
+      title: input.title,
+      description: input.description,
+      category: input.category,
+      source: input.source,
+      departmentId: input.departmentId,
+      ownerId: input.ownerId,
+      status: "identified",
+      aiSuggested: true,
+      inherent: {
+        likelihood: input.likelihood,
+        impact: input.impact,
+        severity: severityScore(input.likelihood, input.impact),
+        level: computeRiskLevel(input.likelihood, input.impact),
+        kind: "inherent",
+        at: new Date().toISOString(),
+        by: get().currentUserId,
+      },
+      reviewFrequency: "quarterly",
+      nextReviewDate: new Date(now + 90 * 86_400_000).toISOString(),
+      treatments: [],
+      kris: [],
+      complianceIds: [],
+      createdAt: new Date().toISOString(),
+    }));
+    set((s) => ({
+      risks: [...drafts, ...s.risks],
+      audit: [logAudit(get, { actor: nameOf(get), action: "CREATE", entity: "Risk (AI draft)", detail: `${drafts.length} draft risiko AI ditambahkan (perlu konfirmasi)` }), ...s.audit],
+    }));
+    return drafts.map((d) => d.id);
   },
 
   confirmAiRisk: (riskId) =>

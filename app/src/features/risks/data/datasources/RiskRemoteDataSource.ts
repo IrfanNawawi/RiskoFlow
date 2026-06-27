@@ -129,6 +129,33 @@ export class RiskRemoteDataSource {
     return id;
   }
 
+  async addSuggested(inputs: NewRiskInput[]): Promise<string[]> {
+    if (inputs.length === 0) return [];
+    const { count } = await this.sb
+      .from("risks").select("id", { count: "exact", head: true }).eq("company_id", this.companyId());
+    const base = (count ?? 0) + 80;
+    const now = Date.now();
+    const ids = inputs.map((_, i) => `r-${now}-${i}`);
+    // Draft AI (FR-RISK-5): ai_suggested=true, status "identified".
+    const { error } = await this.sb.from("risks").insert(
+      inputs.map((input, i) => ({
+        id: ids[i], code: `R-${String(base + i).padStart(3, "0")}`, company_id: this.companyId(),
+        title: input.title, description: input.description ?? "", category: input.category, source: input.source,
+        department_id: input.departmentId, owner_id: input.ownerId, status: "identified", ai_suggested: true,
+        review_frequency: "quarterly", next_review_date: new Date(now + 90 * DAY_MS).toISOString(),
+      })),
+    );
+    if (error) throw error;
+    const { error: aErr } = await this.sb.from("assessments").insert(
+      inputs.map((input, i) => ({
+        id: `as-${now}-${i}`, risk_id: ids[i], likelihood: input.likelihood, impact: input.impact,
+        kind: "inherent", at: new Date().toISOString(), by: this.userId(),
+      })),
+    );
+    if (aErr) throw aErr;
+    return ids;
+  }
+
   async confirmAiSuggested(id: string): Promise<void> {
     const { error } = await this.sb.from("risks").update({ ai_suggested: false, status: "assessed" }).eq("id", id);
     if (error) throw error;

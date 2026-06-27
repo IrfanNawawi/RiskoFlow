@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/data/store";
-import { Card, Icon } from "@/components/ui";
+import { Card, Icon, Button } from "@/components/ui";
 import { fmtDateTime, cn } from "@/lib/format";
+
+const STEP = 8;
 
 const ACTION_META: Record<string, { icon: string; cls: string }> = {
   CREATE: { icon: "add_circle", cls: "bg-risk-low/15 text-risk-low" },
@@ -15,6 +18,9 @@ const ACTION_META: Record<string, { icon: string; cls: string }> = {
 
 export function AuditPage() {
   const audit = useStore(useShallow((s) => s.activeAudit()));
+  const [visible, setVisible] = useState(STEP);
+  const shown = audit.slice(0, visible);
+  const remaining = audit.length - shown.length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -25,7 +31,7 @@ export function AuditPage() {
 
       <Card className="p-5">
         <div className="flex flex-col">
-          {audit.map((a, i) => {
+          {shown.map((a, i) => {
             const meta = ACTION_META[a.action] ?? { icon: "circle", cls: "bg-surface-muted text-outline" };
             return (
               <div key={a.id} className="flex gap-4">
@@ -33,7 +39,7 @@ export function AuditPage() {
                   <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", meta.cls)}>
                     <Icon name={meta.icon} size={18} fill />
                   </span>
-                  {i < audit.length - 1 && <span className="my-1 w-0.5 flex-1 bg-border-hairline" />}
+                  {i < shown.length - 1 && <span className="my-1 w-0.5 flex-1 bg-border-hairline" />}
                 </div>
                 <div className="flex-1 pb-6">
                   <div className="flex flex-wrap items-center gap-2">
@@ -49,6 +55,14 @@ export function AuditPage() {
           })}
         </div>
       </Card>
+
+      {remaining > 0 && (
+        <div className="flex justify-center">
+          <Button variant="outline" icon="expand_more" onClick={() => setVisible((v) => v + STEP)}>
+            Tampilkan lebih banyak (sisa {remaining})
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
