@@ -24,7 +24,6 @@ Web app pengelolaan manajemen risiko berbasis **ISO 31000:2018**, dibangun sesua
 ## Menjalankan
 
 ```bash
-cd app
 bun install
 bun run dev        # http://localhost:5173
 ```

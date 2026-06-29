@@ -1,1 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
 .DS_Store
+.vite
+
+# Env (kredensial Supabase) — jangan commit. .env.example tetap di-commit.
+.env
+.env.*
+!.env.example
+
+# Supabase CLI
+supabase/.temp
+supabase/.branches

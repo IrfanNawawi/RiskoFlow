@@ -5,7 +5,8 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "*.config.{js,ts}"] },
+  // `supabase/functions` = kode Deno (runtime Edge), bukan bagian build TS klien — lint terpisah.
+  { ignores: ["dist", "node_modules", "*.config.{js,ts}", "supabase/functions"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

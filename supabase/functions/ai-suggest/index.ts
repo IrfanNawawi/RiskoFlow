@@ -10,7 +10,7 @@
 //                   200 { suggestion: AiTreatmentSuggestion } (action "treatment")
 //                   4xx/5xx { error } → client (AiEdgeSuggestionService) fallback ke mock.
 //
-// Selaras tipe `IAiSuggestionService` di app/src/features/ai/domain.
+// Selaras tipe `IAiSuggestionService` di src/features/ai/domain.
 
 // @ts-nocheck — file Deno (runtime Edge), bukan bagian build TS klien (tsc app).
 
