@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/data/store";
@@ -23,6 +23,14 @@ export function GenerateAiModal({ open, onClose }: { open: boolean; onClose: () 
   const [candidates, setCandidates] = useState<AiRiskSuggestion[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
+  // `onClose` selalu terbaru tanpa menjadi dependency efek (lihat di bawah).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Reset & pasang listener HANYA saat modal dibuka (transisi `open`). Jangan sertakan `onClose`
+  // di deps: identitasnya berubah tiap parent re-render, dan bila dijadikan dependency, efek ini
+  // jalan ulang lalu menghapus kandidat hasil AI (setCandidates([]) + generate.reset()) — bug
+  // "hasil muncul lalu hilang/menutup".
   useEffect(() => {
     if (!open) return;
     setDepartmentId("");
@@ -31,14 +39,14 @@ export function GenerateAiModal({ open, onClose }: { open: boolean; onClose: () 
     generate.reset();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseRef.current();
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -46,13 +54,18 @@ export function GenerateAiModal({ open, onClose }: { open: boolean; onClose: () 
 
   const onGenerate = async () => {
     if (!departmentId) return;
-    const result = await generate.mutateAsync({
-      industryType: company.industryType,
-      departmentName: deptName,
-      existingTitles,
-    });
-    setCandidates(result);
-    setSelected(new Set(result.map((_, i) => i))); // default semua terpilih
+    try {
+      const result = await generate.mutateAsync({
+        industryType: company.industryType,
+        departmentName: deptName,
+        existingTitles,
+      });
+      setCandidates(result);
+      setSelected(new Set(result.map((_, i) => i))); // default semua terpilih
+    } catch {
+      // Kegagalan ditampilkan via `generate.isError` di bawah; cegah unhandled rejection.
+      setCandidates([]);
+    }
   };
 
   const toggle = (i: number) =>
@@ -131,7 +144,8 @@ export function GenerateAiModal({ open, onClose }: { open: boolean; onClose: () 
 
               {generate.isError && (
                 <p className="flex items-center gap-1.5 rounded-[12px] bg-error-container px-3 py-2 text-[13px] text-on-error-container">
-                  <Icon name="error" size={16} /> Gagal menghasilkan usulan. Coba lagi.
+                  <Icon name="error" size={16} />
+                  {generate.error instanceof Error ? generate.error.message : "Gagal menghasilkan usulan."} Coba lagi.
                 </p>
               )}
 

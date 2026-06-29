@@ -245,6 +245,12 @@ export function RiskDetailPage() {
                     Minta AI menyarankan strategi mitigasi untuk risiko ini. Usulan tetap perlu Anda konfirmasi.
                   </p>
                 )}
+                {suggestTreatment.isError && (
+                  <p className="mt-2 flex items-center gap-1.5 rounded-[12px] bg-error-container px-3 py-2 text-[13px] text-on-error-container">
+                    <Icon name="error" size={16} />
+                    {suggestTreatment.error instanceof Error ? suggestTreatment.error.message : "Gagal menghubungi AI."} Coba lagi.
+                  </p>
+                )}
                 <Button
                   className="mt-3 w-full"
                   size="sm"

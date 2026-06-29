@@ -8,13 +8,13 @@
 // Kontrak request : POST { action: "risks" | "treatment", payload }
 // Kontrak response: 200 { suggestions: AiRiskSuggestion[] }  (action "risks")
 //                   200 { suggestion: AiTreatmentSuggestion } (action "treatment")
-//                   4xx/5xx { error } → client (AiEdgeSuggestionService) fallback ke mock.
+//                   4xx/5xx { error } → client (AiEdgeSuggestionService) menampilkan pesan error.
 //
 // Selaras tipe `IAiSuggestionService` di src/features/ai/domain.
 
 // @ts-nocheck — file Deno (runtime Edge), bukan bagian build TS klien (tsc app).
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
