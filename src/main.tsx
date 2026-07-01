@@ -11,6 +11,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
 import { AppShell } from "@/components/AppShell";
 import { riskSearchSchema } from "@/features/risks/validation/search.schema";
@@ -142,5 +143,6 @@ createRoot(document.getElementById("root")!).render(
         <RouterProvider router={router} />
       </RemoteHydrationGate>
     </QueryClientProvider>
+    <SpeedInsights />
   </StrictMode>,
 );
