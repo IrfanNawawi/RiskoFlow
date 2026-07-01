@@ -1,40 +1,24 @@
-<!--
-TEMPLATE dokumentasi fitur (web SPA). Salin file ini ke docs/features/<nama-fitur>.md
-lalu isi placeholder <...> dan hapus blok komentar HTML.
+# <Fitur> Feature — RiskoFlow
 
-Contoh nyata yang sudah jadi: docs/features/risks.md.
+<1–2 kalimat: fitur guna + FR-* ref dari PRD.>
 
-Aturan (lihat .claude/guidelines/technical-writing.md):
-- Verifikasi SETIAP path/route/lib ke kode nyata. Jangan tulis yang tidak ada.
-- Bedakan "sudah ada" (mock store, TanStack Router, Vitest) vs "⚠️ target" (Supabase).
-- Entity digambarkan sebagai `type` + pure function (BUKAN class).
-- Layer dinamis (use-cases, store, validation) hanya didokumentasikan bila memang ada — hapus bagiannya bila tidak.
-- Bagian Testing diisi skenario konkret (Vitest sudah terpasang).
-- Prosa Bahasa Indonesia; identifier kode Bahasa Inggris.
--->
-
-# <Nama Fitur> Feature
-
-<Satu–dua kalimat: fitur ini untuk apa, dari sudut pandang pengguna + referensi FR-* PRD.>
-
-> ⚠️ **Mock phase** (bila relevan): data layer membaca [Zustand mock store](../../src/data/store.ts),
-> bukan Supabase. Signature repository sudah Supabase-ready.
+> ⚠️ **Mock phase**: data via Zustand `@/data/store`, bukan Supabase. Saat live: datasource → Supabase PostgREST/RPC.
 
 ---
 
-## Daftar Isi
+## Toc
 
-1. [Lokasi File](#lokasi-file)
-2. [Folder Structure](#folder-structure)
+1. [Lokasi](#lokasi-file)
+2. [Struktur Folder](#folder-structure)
 3. [Dependency Flow](#dependency-flow)
 4. [Domain Layer](#domain-layer)
 5. [Data Layer](#data-layer)
-6. [Validation Layer](#validation-layer)
-7. [Presentation Layer](#presentation-layer)
-8. [Data Source / API](#data-source--api)
-9. [State Management](#state-management)
-10. [Navigasi](#navigasi)
-11. [Responsiveness](#responsiveness)
+6. [Validasi](#validation-layer)
+7. [Presentation](#presentation-layer)
+8. [Data Source](#data-source--api)
+9. [State Mgmt](#state-management)
+10. [Routing](#navigasi)
+11. [Responsif](#responsiveness)
 12. [Testing](#testing)
 13. [Migrasi](#migrasi)
 
@@ -43,52 +27,52 @@ Aturan (lihat .claude/guidelines/technical-writing.md):
 ## Lokasi File
 
 ```
-src/features/<nama-fitur>/
+src/features/<fitur>/
 ```
 
-Entry point publik: [`index.ts`](../../src/features/<nama-fitur>/index.ts)
+Entry: [`index.ts`](../src/features/<fitur>/index.ts)
 
 ---
 
 ## Folder Structure
 
-<!-- Cantumkan hanya folder/file yang BENAR-BENAR dibuat. Layer dinamis (use-cases, stores,
-     validation) dihapus bila fitur tidak membutuhkannya — jangan buat folder kosong. -->
+**Tambah layer hanya saat dibutuhkan** — no empty folder.
 
 ```
-<nama-fitur>/
+<fitur>/
 ├── domain/
 │   ├── repositories/
 │   │   └── I<Name>Repository.ts
-│   ├── use-cases/                  # OPSIONAL — hanya bila ada business logic
+│   ├── use-cases/        ← HANYA jika ada biz logic (gate, multi-step)
 │   │   └── <verb><Name>.usecase.ts
 │   └── index.ts
 ├── data/
 │   ├── datasources/
-│   │   ├── <nama-fitur>.dto.ts
-│   │   └── <Name>MockDataSource.ts   # ⚠️ mock; target: <Name>RemoteDataSource (Supabase)
+│   │   ├── <fitur>.dto.ts
+│   │   └── <Name>MockDataSource.ts  ← mock sekarang; target: Supabase
 │   ├── mappers/
-│   │   └── <nama-fitur>.mapper.ts
+│   │   └── <fitur>.mapper.ts        ← DTO → entity + Zod validasi
 │   ├── repositories/
-│   │   └── <Name>Repository.ts        # implements I<Name>Repository
+│   │   └── <Name>Repository.ts      ← impl I<Name>Repository
 │   └── index.ts
-├── validation/                     # OPSIONAL — bila ada form
-│   └── <nama-fitur>.schema.ts
+├── validation/           ← HANYA jika ada form (react-hook-form)
+│   └── <fitur>.schema.ts ← Zod; pesan error Bahasa Indonesia
 ├── presentation/
-│   ├── stores/                     # OPSIONAL — UI state global khusus fitur (Zustand)
-│   │   └── <nama-fitur>.store.ts
-│   └── hooks/
-│       ├── use<Name>Repository.ts  # DI factory
-│       ├── <name>Keys.ts           # query-key factory (sertakan tenant)
-│       ├── use<Name>s.ts           # useQuery (list/detail)
-│       └── use<Name>Mutations.ts   # useMutation
-├── __tests__/unit/
-├── <Name>Page.tsx                  # page (route component)
-└── index.ts
+│   ├── components/       ← Fitur-local component (bukan shared)
+│   ├── hooks/
+│   │   ├── use<Name>Repository.ts  ← DI factory
+│   │   ├── <fitur>Keys.ts          ← query-key factory + companyId
+│   │   ├── use<Name>s.ts           ← useQuery (list/detail)
+│   │   └── use<Name>Mutations.ts   ← useMutation
+│   ├── stores/           ← HANYA jika ada global UI state (Zustand)
+│   │   └── <fitur>.store.ts
+│   ├── pages/
+│   │   └── <Name>Page.tsx           ← thin: hook → component
+│   └── index.ts
+├── __tests__/
+├── index.ts             ← export page
+└── README.md            ← LOCAL docs (optional)
 ```
-
-> Entity sering dipakai bersama dari [`@/data/types`](../../src/data/types.ts) + pure function di
-> [`@/lib`](../../src/lib/) (aturan inti #2: entity = `type` + pure function, bukan class).
 
 ---
 
@@ -96,16 +80,17 @@ Entry point publik: [`index.ts`](../../src/features/<nama-fitur>/index.ts)
 
 ```
 <Name>Page
-    │
-    ├── use<Name>s / use<Name>        (useQuery — queryKey: <name>Keys.*(companyId))
-    │       └── use<Name>Repository (DI) → I<Name>Repository
-    │               └── <Name>Repository
-    │                       └── <Name>MockDataSource → @/data/store  (⚠️ target: Supabase)
-    │                               └── <Name>DTO → <name>ToDomain (validasi Zod) → <Entity>
-    │
-    └── use<Name>Mutations            (useMutation → invalidate <name>Keys.all)
-            └── [<verb> use-case: aturan bisnis] → repository
+├── use<Name>s / use<Name>     (useQuery; key: <fitur>Keys.*(companyId))
+│   └── use<Name>Repository (DI) → I<Name>Repository
+│       └── <Name>Repository
+│           └── <Name>MockDataSource → @/data/store
+│               └── DTO → mapper (Zod) → entity
+│
+└── use<Name>Mutations        (useMutation; invalidate <fitur>Keys.all)
+    └── [use-case] → repo
 ```
+
+**Rule:** presentasi tidak import `data/` langsung — via DI hook.
 
 ---
 
@@ -113,194 +98,438 @@ Entry point publik: [`index.ts`](../../src/features/<nama-fitur>/index.ts)
 
 ### Entities
 
-`<Name>` — `type` polos (dari [`@/data/types`](../../src/data/types.ts) atau `domain/entities/`).
-Pure function turunan (pengganti getter):
+`type` + pure function (bukan class). Core di [`@/data/types`](../src/data/types.ts):
 
-| Fungsi | Signature | Keterangan |
-|---|---|---|
-| `<fn>` | `(x: <Name>) => <ret>` | <keterangan; sebut null-handling> |
+```typescript
+export interface <Name> {
+  id: string;
+  companyId: string;      // ← multi-tenant wajib
+  // … field
+}
+
+export const <fn> = (x: <Name>): Ret => /* … */;
+```
 
 ### Repository Interface
 
-**File:** [`domain/repositories/I<Name>Repository.ts`](../../src/features/<nama-fitur>/domain/repositories/I<Name>Repository.ts)
+**File:** `domain/repositories/I<Name>Repository.ts`
 
 ```typescript
-interface I<Name>Repository {
-  list(): Promise<<Name>[]>;
+export interface I<Name>Repository {
+  list(query: ListQuery): Promise<<Name>[]>;
   getById(id: string): Promise<<Name> | undefined>;
+  // … create, update, delete
 }
 ```
 
-### Use Cases
+### Use Cases (Dinamis)
 
-<!-- Hapus bagian ini bila fitur tidak punya business logic. -->
+**HANYA saat:**
+- Permission gate (role check)
+- Multi-step / cross-aggregate logic
 
-| Use Case | Input | Output | Aturan bisnis |
-|---|---|---|---|
-| `<verb><Name>(repo, ...)` | `<input>` | `Promise<...>` | <aturan, mis. gate peran> |
+**Hapus jika:** passthrough fetch, form validasi saja.
+
+```typescript
+export const <verb><Name> = (
+  repo: I<Name>Repository, 
+  roles: MembershipRole[]
+) => async (arg) => {
+  if (!roles.includes("risk_manager")) throw new Error("Denied");
+  return repo.<action>(arg);
+};
+```
 
 ---
 
 ## Data Layer
 
-### DTOs
+### DTO (snake_case)
 
-**File:** [`data/datasources/<nama-fitur>.dto.ts`](../../src/features/<nama-fitur>/data/datasources/<nama-fitur>.dto.ts)
+**File:** `data/datasources/<fitur>.dto.ts`
 
-| DTO | Digunakan oleh | Catatan |
-|---|---|---|
-| `<Name>DTO` | output data source | Mock: `= <Name>`. Target Supabase: baris snake_case |
+```typescript
+export interface <Name>DTO {
+  id: string;
+  company_id: string;     // ← Supabase snake_case
+  // …
+}
+```
+
+Generated dari Supabase: [`database.types.ts`](../src/database.types.ts) (via `supabase gen types`).
 
 ### Data Source
 
-**File:** [`data/datasources/<Name>MockDataSource.ts`](../../src/features/<nama-fitur>/data/datasources/<Name>MockDataSource.ts)
+**File:** `data/datasources/<Name>MockDataSource.ts`
 
-| Method | Sumber (mock) | Target (Supabase) |
-|---|---|---|
-| `list()` | `store.active<...>()` | `select … where company_id = …` |
+```typescript
+export class <Name>MockDataSource implements I<Name>DataSource {
+  async list(): Promise<<Name>DTO[]> {
+    return store.active<...>();  // ← mock; target: supabase.from()
+  }
+}
+```
+
+Target Supabase:
+```typescript
+// data/datasources/<Name>RemoteDataSource.ts
+async list(companyId: string): Promise<<Name>DTO[]> {
+  const { data } = await supabase
+    .from("<table>")
+    .select(/* specific col */)
+    .eq("company_id", companyId);  // RLS scope otomatis + client enforce
+  return data ?? [];
+}
+```
 
 ### Mapper
 
-**File:** [`data/mappers/<nama-fitur>.mapper.ts`](../../src/features/<nama-fitur>/data/mappers/<nama-fitur>.mapper.ts)
+**File:** `data/mappers/<fitur>.mapper.ts`
 
-| Fungsi | Input | Output | Catatan |
-|---|---|---|---|
-| `<x>ToDomain(dto)` | `<X>DTO` | `<Entity> \| null` | Validasi Zod; data rusak → `null` |
+```typescript
+import { z } from "zod";
 
-### Repository Implementation
+const dtoSchema = z.object({
+  id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  // …
+});
 
-**File:** [`data/repositories/<Name>Repository.ts`](../../src/features/<nama-fitur>/data/repositories/<Name>Repository.ts)
+export const <name>ToDomain = (dto: <Name>DTO): <Name> | null => {
+  const parsed = dtoSchema.safeParse(dto);
+  if (!parsed.success) return null; // DTO corrupt → filter
+  return {
+    id: parsed.data.id,
+    companyId: parsed.data.company_id,  // ← camelCase domain
+    // …
+  };
+};
+```
 
-`implements I<Name>Repository`; gabung datasource + mapper. **DTO tidak bocor** ke presentation.
+**Wajib:** DTO tidak bocor ke `presentation`.
+
+### Repository Impl
+
+**File:** `data/repositories/<Name>Repository.ts`
+
+```typescript
+export class <Name>Repository implements I<Name>Repository {
+  constructor(private ds: I<Name>DataSource) {}
+
+  async list(query): Promise<<Name>[]> {
+    const dtos = await this.ds.list();
+    return dtos.map(<name>ToDomain).filter(Boolean);
+  }
+}
+```
 
 ---
 
 ## Validation Layer
 
-<!-- Hapus bila tidak ada form. -->
+**File:** `validation/<fitur>.schema.ts` (jika ada form)
 
-**File:** [`validation/<nama-fitur>.schema.ts`](../../src/features/<nama-fitur>/validation/<nama-fitur>.schema.ts)
+```typescript
+import { z } from "zod";
 
-Schema **Zod** untuk input form (react-hook-form via `zodResolver`). Pesan error Bahasa Indonesia.
+export const <name>Schema = z.object({
+  title: z.string().min(1, "Judul wajib diisi"),
+  // … Bahasa Indonesia pesan error
+});
 
-| Export | Tipe | Keterangan |
-|---|---|---|
-| `<name>Schema` | `z.object` | <field + aturan> |
-| `<Name>Input` | `z.infer<...>` | Tipe hasil inferensi |
+export type <Name>Input = z.infer<typeof <name>Schema>;
+```
+
+Pakai dengan `react-hook-form`:
+```typescript
+const form = useForm<CreateInput>({
+  resolver: zodResolver(createSchema),
+});
+```
 
 ---
 
 ## Presentation Layer
 
-### Hooks
+### Hooks (DI + Query)
 
-| Hook | Tipe | Query Key | Keterangan |
-|---|---|---|---|
-| `use<Name>Repository` | DI factory | — | Wiring data→domain (`useMemo`) |
-| `use<Name>s` | `useQuery` | `["<key>", companyId, ...]` | <config: staleTime> |
-| `use<Verb><Name>` | `useMutation` | — | invalidate `<name>Keys.all(companyId)` |
+**File:** `presentation/hooks/use<Name>Repository.ts`
 
-> **Multi-tenant:** query key WAJIB menyertakan `companyId` (perusahaan aktif).
+```typescript
+export const use<Name>Repository = (): I<Name>Repository => {
+  return useMemo(() => {
+    const ds = new <Name>MockDataSource(); // target: RemoteDataSource
+    return new <Name>Repository(ds);
+  }, []);
+};
+```
+
+**File:** `presentation/hooks/<fitur>Keys.ts`
+
+```typescript
+export const <fitur>Keys = {
+  all: (companyId: string) => [<fitur>, companyId],
+  list: (companyId: string, filter?) => [
+    ...<fitur>Keys.all(companyId),
+    "list",
+    filter
+  ],
+  detail: (companyId: string, id: string) => [
+    ...<fitur>Keys.all(companyId),
+    "detail",
+    id
+  ],
+} as const;
+```
+
+**Wajib:** Query key include `companyId` (multi-tenant scope).
+
+**File:** `presentation/hooks/use<Name>s.ts`
+
+```typescript
+export const use<Name>s = (companyId: string, filter?: Filter) => {
+  const repo = use<Name>Repository();
+  return useQuery({
+    queryKey: <fitur>Keys.list(companyId, filter),
+    queryFn: () => repo.list({ companyId, ...filter }),
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+  });
+};
+```
+
+**File:** `presentation/hooks/use<Name>Mutations.ts`
+
+```typescript
+export const useCreate<Name> = (companyId: string) => {
+  const repo = use<Name>Repository();
+  const qc = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (input) => repo.create({ companyId, ...input }),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: <fitur>Keys.all(companyId),
+      });
+    },
+  });
+};
+```
 
 ### Components
 
-| Komponen | File | Keterangan |
-|---|---|---|
-| `<Name>Card` | [`...`](../../src/features/<nama-fitur>/presentation/components/<Name>Card.tsx) | <props utama + keterangan> |
+Local component di `presentation/components/`. Shared di `@/components`.
+
+```typescript
+// Good: fitur-specific logic
+export const <Name>Card: React.FC<{ data: <Name> }> = ({ data }) => (
+  <Card>
+    <h3>{data.title}</h3>
+    {/* … */}
+  </Card>
+);
+```
 
 ### Pages
 
-| Page | File | Alur |
-|---|---|---|
-| `<Name>Page` | [`<Name>Page.tsx`](../../src/features/<nama-fitur>/<Name>Page.tsx) | <alur + search/route params> |
+**File:** `presentation/pages/<Name>Page.tsx` (atau root feature folder)
+
+```typescript
+export default function <Name>Page() {
+  const companyId = useCompanyId(); // from Zustand context hook
+  const { data, isPending } = use<Name>s(companyId);
+
+  if (isPending) return <Skeleton />;
+  return (
+    <div>
+      {data.map(item => <ItemCard key={item.id} item={item} />)}
+    </div>
+  );
+}
+```
+
+### Zustand Store (Opsional)
+
+**HANYA** jika ada global UI state (filter, modal open, tab active).
+
+**File:** `presentation/stores/<fitur>.store.ts`
+
+```typescript
+import { create } from "zustand";
+
+interface <Name>State {
+  selectedId: string | null;
+  setSelected: (id: string) => void;
+}
+
+export const use<Name>Store = create<<Name>State>((set) => ({
+  selectedId: null,
+  setSelected: (id) => set({ selectedId: id }),
+}));
+```
+
+**Bukan** untuk server state (TanStack Query job).
 
 ---
 
 ## Data Source / API
 
-<!-- Mock phase: tulis "Belum ada API; sumber = mock store". Saat Supabase: isi tabel. -->
+| Op | Sekarang | Target (Supabase) | RLS |
+|----|----------|-------------------|-----|
+| List | `store.active<...>()` | `from("<table>").select()` | ✓ company_id via JWT |
+| Detail | `store.find()` | `from("<table>").eq("id", …)` | ✓ |
+| Create | `store.add()` | `from("<table>").insert()` | ✓ RPC atomik (D25) |
+| Update | `store.update()` | `from("<table>").update()` | ✓ approval gate DB (D22) |
+| Delete | `store.delete()` | `from("<table>").delete()` (soft via trigger) | ✓ |
 
-| Operasi | Sumber sekarang | Target (Supabase) | Auth |
-|---|---|---|---|
-| <op> | `@/data/store` (mock) | `<tabel/RPC>` + RLS | — (anon key `VITE_*`) |
-
-> Tidak ada secret/service-role key di klien (aturan inti #10). Akses data lewat repository, bukan
-> komponen memanggil Supabase langsung.
+**Rule:** Client tidak `WHERE company_id = X` — RLS enforce di DB via JWT. Trust JWT scope.
 
 ---
 
 ## State Management
 
 | State | Tool | Alasan |
-|---|---|---|
-| <data server> | **TanStack Query** | Server state — cache, invalidate per tenant |
-| <filter di URL> | **TanStack Router search params** (Zod) | Shareable/bookmarkable |
-| <UI state global> | **Zustand** | UI state lintas komponen |
-| <state lokal> | `useState` | Hanya 1 komponen |
+|-------|------|--------|
+| Server (risk list, detail) | **TanStack Query** | Cache + invalidate per tenant |
+| URL filter (search, sort) | **TanStack Router search params** + Zod | Shareable, bookmarkable |
+| UI global (modal, tab, selected) | **Zustand** | Cross-component state |
+| Form (input, error) | **react-hook-form** | Uncontrolled, perf |
+| Local (hover, focus) | `useState` | Single component only |
 
 ---
 
 ## Navigasi
 
-| Path | Route id | Page | Keterangan |
-|---|---|---|---|
-| `/<path>` | `/app/<path>` | `<Name>Page` | <search/param + validateSearch bila ada> |
+| Path | Route ID | Page | Catatan |
+|------|----------|------|---------|
+| `/<path>` | `/app/<path>` | `<Name>Page` | Code-based TanStack Router |
 
-> Rute didaftarkan **code-based** di [main.tsx](../../src/main.tsx) (`createRoute` + `addChildren`),
-> di-`lazyRouteComponent` (code splitting). Layout `AppShell` = route pathless `id: "app"` → route id
-> berprefiks `/app`, tetapi path `Link`/navigasi tanpa prefiks (`to="/<path>"`).
+**Registrasi:** `createRoute()` → `addChildren()` di [main.tsx](../src/main.tsx).
+
+**Search params:** Zod validasi + typed.
+
+```typescript
+const searchSchema = z.object({
+  status: z.enum(["ACTIVE", "CLOSED"]).optional(),
+  page: z.number().default(1),
+});
+
+const <Name>Page = Route.lazy(() =>
+  import("@/features/<fitur>/<Name>Page").then(m => ({
+    component: m.default,
+    validateSearch: searchSchema,
+  }))
+);
+```
 
 ---
 
 ## Responsiveness
 
-- Layout Tailwind v4 + design token (`@theme` di [index.css](../../src/index.css)); **tanpa hardcode** hex/spacing.
-- Breakpoint utama: mobile → `lg`/`xl`. <Jelaskan grid/stacking + `overflow-x-auto` bila ada tabel.>
-- a11y: level risiko **label + skor** (bukan hanya warna), ikon-only punya `aria-label`, kontras WCAG AA (NFR-09).
+- **Layout:** Tailwind v4 + `@theme` token di [src/index.css](../src/index.css). No hardcode hex/px.
+- **Mobile → `lg`/`xl`:** Grid stack mobile, row lg+.
+- **Table overflow:** `overflow-x-auto` wrapper.
+- **a11y:** Label + skor risiko (bukan hanya warna), `aria-label` ikon, kontras WCAG AA.
 
 ---
 
 ## Testing
 
-Test runner **Vitest** sudah terpasang ([vitest.config.ts](../../vitest.config.ts)). Jalankan: `bun run test`.
+`bun run test` (Vitest), `bun run e2e` (Playwright).
 
-### Unit — Use Case ([`__tests__/unit/<verb><Name>.usecase.test.ts`](../../src/features/<nama-fitur>/__tests__/unit/))
+### Unit — Use Case
 
-- ✅ jalur sukses → repository dipanggil dengan argumen benar
-- ✅ aturan bisnis dilanggar → `throw`; repository tidak dipanggil
+- ✅ Sukses: repo dipanggil benar
+- ✅ Gate violated: throw; repo tidak dipanggil
 
-### Unit — Mapper ([`__tests__/unit/<nama-fitur>.mapper.test.ts`](../../src/features/<nama-fitur>/__tests__/unit/))
+### Unit — Mapper
 
-- ✅ DTO valid → entity domain
-- ✅ DTO rusak (enum/field salah) → `null` / difilter
+- ✅ DTO valid → entity
+- ✅ DTO corrupt (enum salah) → null / filter
 
-### Unit — Validation (bila ada form)
+### Unit — Validasi (Form)
 
-- ✅ input valid → lolos; pelanggaran → pesan error Bahasa Indonesia benar
+- ✅ Input valid → lolos
+- ✅ Violation → error Bahasa Indonesia
 
-### Component (opsional, React Testing Library)
+### Component (RTL)
 
-- ✅ render loading → success; empty/error state tampil benar
+- ✅ Load → success/empty/error state
+- ✅ Mutation submit → cache invalidate
 
-> E2E (Playwright) & RLS test (pgTAP) = target NFR-12, menyusul saat Supabase masuk.
+### E2E (Playwright)
+
+- ✅ Critical path: navigate → fetch → display
+- ✅ **RLS test: user dari company B tidak akses company A data (pgTAP)**
 
 ---
 
 ## Migrasi
 
-<!-- Bila fitur ini menggantikan akses store langsung / halaman lama. Hapus bila fitur baru. -->
-
-| Sebelum | Sesudah |
-|---|---|
+| Before | After |
+|--------|-------|
 | `useStore(s => s.active<...>())` | `use<Name>s()` (TanStack Query) |
 | `store.<action>(...)` | `use<Verb><Name>().mutate(...)` |
 
-### Yang dipertahankan (paritas perilaku)
+**Preserved:**
+- Path: `/<path>` unchanged
+- Behavior: logic/edge case identical
+- Peran: risk_manager, admin role enforced
 
-- <Logika/edge case yang harus identik.>
-- <Path navigasi dipertahankan: `/<path>`, ...>
+**Belum migrasi:**
+- [ ] `<Name>RemoteDataSource` saat Supabase live
+- [ ] Edge Function RPC saat perlu approval (D22)
 
-### Belum dimigrasi
+---
 
-- [ ] <Fitur/akses store lain yang masih langsung.>
-- [ ] `<Name>RemoteDataSource` (Supabase) — saat backend tersedia.
+## Catatan Implementasi
+
+### RLS Multi-Tenant (NFR-01)
+
+Semua query scope `company_id` otomatis via Postgres RLS policy. Client trust JWT; jangan `WHERE company_id = X` hardcode.
+
+Test: Verify user dari perusahaan lain tidak akses (pgTAP + Playwright).
+
+### Database Types (NFR-13)
+
+```bash
+supabase gen types typescript --linked > src/database.types.ts
+```
+
+Import: `import type { <Name>DTO } from "@/database.types"`.
+Presentation: import entity domain saja, bukan DTO.
+
+### i18n & Format (NFR-10)
+
+```typescript
+import { t } from "react-i18next";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+
+// Hardcode → t("key")
+// Tanggal: format(date, "PPP", { locale: idLocale })
+// IDR: Intl.NumberFormat("id-ID", { currency: "IDR" })
+```
+
+### Sentry (NFR-11)
+
+Init di [main.tsx](../src/main.tsx) sebelum render. Error otomatis tracked.
+
+```typescript
+Sentry.captureException(error);
+Sentry.setTag("feature", "<fitur>");
+```
+
+### Offline Support (NFR-14)
+
+TanStack Query cache + staleTime/gcTime. Offline badge di topbar (via `useOnline`).
+
+---
+
+## Refs
+
+- [PRD.md](PRD.md) — feature FR-*
+- [frontend-structure.md](../.claude/guidelines/frontend-structure.md) — layer rules
+- [architecture.md](../.claude/guidelines/architecture.md) — design rationale
+- [database.types.ts](../src/database.types.ts) — generated DTO (NFR-13)
+- [design-system.md](../.claude/guidelines/design-system.md) — token, palette

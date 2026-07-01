@@ -29,8 +29,9 @@ create or replace function compute_risk_level(severity int)
 returns risk_level
 language sql immutable
 as $$
+  -- PRD D4: LOW 1–4, MEDIUM 5–9, HIGH 10–15, EXTREME 16–25
   select case
-    when severity >= 15 then 'EXTREME'::risk_level
+    when severity >= 16 then 'EXTREME'::risk_level
     when severity >= 10 then 'HIGH'::risk_level
     when severity >= 5  then 'MEDIUM'::risk_level
     else 'LOW'::risk_level

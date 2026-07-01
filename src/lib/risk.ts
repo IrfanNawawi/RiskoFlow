@@ -6,7 +6,8 @@ import type { RiskLevel, RiskCategory, RiskSource } from "@/data/types";
  */
 export function computeRiskLevel(likelihood: number, impact: number): RiskLevel {
   const score = likelihood * impact;
-  if (score >= 15) return "EXTREME";
+  // PRD D4: LOW 1–4, MEDIUM 5–9, HIGH 10–15, EXTREME 16–25
+  if (score >= 16) return "EXTREME";
   if (score >= 10) return "HIGH";
   if (score >= 5) return "MEDIUM";
   return "LOW";

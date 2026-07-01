@@ -1,81 +1,238 @@
-# Konvensi & Guardrail
+# Konvensi & Guardrail — RiskoFlow
 
-Konvensi konkret untuk kode RiskoFlow agar konsisten lintas fitur & cache/re-render terkendali
-saat fitur bertambah. Lengkapi [architecture.md](architecture.md) (aturan layer) dan
-[coding-rules.md](coding-rules.md) (gaya kode).
+Standar lintas fitur: cache stable, re-render terukur, layer enforce, tenant-safe.
+Cross-ref: [frontend-structure.md](frontend-structure.md) + [architecture.md](architecture.md).
 
 ---
 
-## 1. Query key (TanStack Query)
+## 1. Query Key Factory (TanStack Query)
 
-Pola: **`['<fitur>', '<resource>', ...deps]`**. Tiap fitur punya factory key sendiri — jangan
-tulis array key mentah ad-hoc di komponen.
+**Pattern:** `['<fitur>', '<resource>', ...deps]` → file per fitur di `hooks/queries.ts`.
 
 ```typescript
-// features/risks/presentation/queries/keys.ts
-export const riskKeys = {
+// features/risks/presentation/hooks/queries.ts
+const riskKeys = {
   all: ["risks"] as const,
-  list: (filter: RiskListQuery) => ["risks", "list", filter] as const,
+  list: (q: RiskListQuery) => ["risks", "list", q] as const,  // deps inside
   detail: (id: string) => ["risks", "detail", id] as const,
-};
+} as const;
 ```
 
-- Semua `deps` yang mempengaruhi hasil **wajib** masuk key (filter, id, perusahaan aktif).
-- Karena data di-scope per perusahaan, **sertakan `activeCompanyId`** pada key bila relevan
-  agar cache tidak bocor antar tenant.
-- Invalidasi terarah: `queryClient.invalidateQueries({ queryKey: riskKeys.all })`.
-
-## 2. Store Zustand
-
-- **Granular per domain**, bukan satu store raksasa untuk segala hal. Store global lintas-fitur
-  (sesi/perusahaan aktif) terpusat; state milik satu fitur → store fitur tersebut.
-- **Selektor** untuk baca state, dan `useShallow` untuk hasil turunan (array/obyek) supaya
-  re-render hanya saat irisan yang dipakai berubah — pola yang sudah dipakai di
-  [DashboardPage.tsx](../../src/features/dashboard/DashboardPage.tsx). Hindari ambil seluruh state.
-- Action yang memutasi state ada di dalam store; komponen memanggil action, bukan menyetel state mentah.
-- Hanya **UI/client state global**. Server state → TanStack Query; form → RHF+Zod; lokal → `useState`.
-
-> Catatan: `src/data/store.ts` saat ini menampung **mock data + selektor + mutator** sekaligus
-> (pengganti backend sementara). Saat Supabase masuk, server state pindah ke TanStack Query dan
-> store menyisakan UI state (perusahaan aktif, sesi, filter).
-
-## 3. Routing & navigasi
-
-- Route didaftarkan di [main.tsx](../../src/main.tsx) (`react-router-dom`). **Pertahankan path
-  yang sudah ada** (`/dashboard`, `/risks/:riskId`, …) agar `<Link>` internal tak putus.
-- Navigasi terprogram lewat `useNavigate`; jangan manipulasi `window.location` langsung.
-- Filter daftar → **typed URL search params** (target TanStack Router, FR-RISK-2) agar
-  shareable & bookmarkable.
-
-## 4. Otorisasi & multi-tenant
-
-- Semua data di-scope ke **perusahaan aktif**. Selektor `active*()` di store sudah menyaring per
-  `activeCompanyId` — ikuti pola itu; jangan tampilkan data lintas tenant.
-- Cek peran di UI (`can()`/`myRoles()`) hanya untuk **UX** (sembunyikan tombol). Otorisasi
-  sebenarnya = **RLS/policy Postgres** (NFR-02). Jangan pernah andalkan UI sebagai gate keamanan.
-
-## 5. Error API → pesan Bahasa Indonesia
-
-- Map error di boundary `data` menjadi `Error` berpesan **Bahasa Indonesia** yang aman ditampilkan;
-  jangan bocorkan detail teknis/PII. Komponen menampilkan via state `isError`/`error` TanStack Query.
-- Sediakan tiga state UI untuk data: **loading (skeleton)**, **empty state**, **error** (FR-DASH-6).
-
-## 6. Format angka & tanggal
-
-- Mata uang **integer IDR** lewat `@/lib/format` (`idr`, `idrCompact`) — jangan format manual/float.
-- Tanggal lewat `fmtDate`/`fmtDateTime`/`relativeDays` (`@/lib/format`), locale `id-ID`.
+**Rule (§9 FRONTEND-STRUCTURE):**
+- ALL query params → key (filter, sort, pagination, id).
+- RLS scope di DB (NFR-01); client **trust JWT**, jangan hardcode `company_id` di query (§4.2).
+- Invalidate: `queryClient.invalidateQueries({ queryKey: riskKeys.all })`.
 
 ---
 
-## Checklist reviewer
+## 2. Store Zustand (§6.3 FRONTEND-STRUCTURE)
 
-- [ ] **Layer:** `presentation` tak import `data`; `domain` tanpa dependency React/UI/Supabase.
-- [ ] **Query key:** lewat factory; semua `deps` (termasuk tenant) masuk key.
-- [ ] **Store:** granular + baca via selektor/`useShallow`; hanya client-state global.
-- [ ] **State sesuai jenis:** server→Query, global UI→Zustand, form→RHF+Zod, lokal→useState.
-- [ ] **Multi-tenant:** data di-scope perusahaan aktif; tak ada kebocoran antar tenant.
-- [ ] **Keamanan:** tak ada secret/service-key di client; otorisasi nyata di RLS, bukan UI.
-- [ ] **Validasi:** input eksternal (form, respons, search param) divalidasi Zod.
-- [ ] **Token desain:** dari Tailwind `@theme`; tak ada hardcode warna/spacing/font.
-- [ ] **a11y:** level risiko pakai label + skor (bukan hanya warna); kontras AA; elemen interaktif beraksesibilitas.
-- [ ] **Gate:** `npm run typecheck` & `npm run build` hijau (`npm run lint`/`test` saat tersedia).
+**Tier:**
+- **Global** (session, activeCompanyId, ui.sidebar) → `src/data/store.ts`.
+- **Feature** (risks filter state, table sort) → `features/<f>/presentation/stores/`.
+- **Local** (form input, modal open) → `useState`.
+
+**Pattern:**
+```typescript
+const useRisksFilter = create<State>((set, get) => ({
+  filters: {},
+  setFilters: (f) => set({ filters: f }),
+}));
+
+// ✅ Read via selector + useShallow (re-render saat irisan berubah)
+const filters = useRisksFilter(useShallow((s) => s.filters));
+```
+
+**Rule:**
+- **Zero server state in Zustand.** Server→Query; Zustand→UI-only.
+- Saat Supabase live: mock store → repo → Query. Store keep UI state.
+- Selectors + `useShallow` agar efficient re-render.
+
+---
+
+## 3. Routing (§7, TanStack Router)
+
+**Register di `src/main.tsx`** (code-based, type-safe).
+
+```typescript
+// ✅ Existing paths LOCKED: /dashboard, /risks/:riskId, /compliance/:id
+// ✅ Search param typed + validated Zod (FR-RISK-2)
+const searchSchema = z.object({ status: z.enum(["open", "closed"]) });
+<Link search={searchSchema.parse({ status: "open" })} />
+```
+
+**Rule:**
+- Programmatic nav → `useNavigate()`; NO `window.location`.
+- Filter, sort, page → URL search param (shareable, bookmarkable).
+
+---
+
+## 4. Multi-Tenant + Otorisasi (NFR-01, §4.2 + §6.1)
+
+**Data scope = RLS at DB.** Postgres policy auto-scope via `company_id` + JWT claim.
+
+```typescript
+// ✅ RLS enforce; client TRUST DB scope
+const { data } = await supabase.from("risks").select("*");
+// ❌ NO explicit WHERE company_id = X
+// ❌ NO hardcode tenant check in UI
+```
+
+**Rule:**
+- Client jangan hardcode tenant filter (DB enforce via RLS).
+- UI role check (`can()`, `myRoles()`) = UX only (hide button). Real gate = RLS policy.
+- Test RLS deny case (D23, §11 FRONTEND-STRUCTURE).
+
+---
+
+## 5. Error Handling (§6.6 Sentry, NFR-11)
+
+**Flow:** API err → map safe msg (ID) → Query `.error` → component render.
+
+```typescript
+// ✅ Mapper: DTO err → entity err (safe ID msg)
+const mapError = (e: unknown): AppError => ({
+  code: "VALIDATION_FAILED",
+  message: "Data tidak valid",  // Bahasa Indonesia
+  details: undefined,  // NO tech detail / PII
+});
+
+// ✅ Component: 3-state (load, empty, error)
+const { data, error, isPending } = useQuery({ ... });
+if (isPending) return <Skeleton />;
+if (error) return <ErrorBoundary error={error} />;
+return <RiskList risks={data} />;
+
+// ✅ Sentry tag tenant
+Sentry.captureException(err, { tags: { company_id } });
+```
+
+**Rule:** 3 UI state = loading (skeleton) + empty + error (FR-DASH-6).
+
+---
+
+## 6. Format (NFR-10: i18n + Locale ID)
+
+**Mata uang:** `idr(123456)` = "Rp 123.456" (integer, tanpa desimal, `id-ID`).  
+**Tanggal:** `fmtDate(iso)` = "01 Jul 2026" (ISO string → locale `id-ID`).  
+**String:** `t("risk.title")` (hardcoded → i18n key).
+
+```typescript
+// @/lib/format — implementasi kanonik pakai Intl native (bukan date-fns)
+export function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+```
+
+---
+
+## 7. Dependency Rule (§1 FRONTEND-STRUCTURE, **WAJIB**)
+
+```
+presentation  →  domain  ←  data
+```
+
+- **domain:** type + pure fn. Zero React/Supabase/UI lib.
+- **data:** DTO (snake_case) → mapper → entity (camelCase). Repository implement I*Repository.  
+  DTO TIDAK ke presentation (§4.3).
+- **presentation:** import domain + components. **Never** import data direct (DI via hook).
+
+---
+
+## 8. Folder Structure (§2 FRONTEND-STRUCTURE)
+
+```
+features/<f>/
+├── domain/
+│   ├── entities/         # Type, interface, I*Repository
+│   └── use-cases/        # Business logic (gate, multi-step only)
+├── data/
+│   ├── datasources/      # *.dto.ts + RemoteDataSource
+│   ├── mappers/          # *.mapper.ts (DTO → entity + Zod)
+│   └── repositories/     # *.repository.ts
+├── validation/           # Zod schema (form, search param)
+├── presentation/
+│   ├── pages/            # *Page.tsx (thin)
+│   ├── components/       # Feature-local UI
+│   ├── hooks/            # DI factory + Query key factory
+│   └── stores/           # Zustand (if needed)
+└── index.ts              # Export page
+```
+
+**Rule:** Layer saat dibutuhkan; no empty folder. Simple feature = page + hook cukup.
+
+---
+
+## 9. Database & Types (NFR-13, §4.0)
+
+**Gen types:** `supabase gen types typescript --linked > src/database.types.ts`.
+
+**Boundary:**
+- `database.types.*` = DTO (snake_case, auto-gen).
+- `@/data/types` = entity (camelCase, manual).
+- Presentation import entity ONLY.
+
+---
+
+## 10. When to Create Use-Case (§13 FRONTEND-STRUCTURE)
+
+**Create saat:**
+- Permission gate (hanya `risk_manager` approve).
+- Multi-step transaction (update risk + auto-trigger review).
+- Cross-aggregate logic (incident → update severity).
+
+**Skip saat:**
+- Passthrough fetch → map → display (hook→repo direct).
+- Form validasi single (Zod cukup).
+- UI state toggle (Zustand cukup).
+
+---
+
+## ✅ Checklist (§14 FRONTEND-STRUCTURE)
+
+- [ ] **Folder:** §2 structure, no empty.
+- [ ] **Dependency:** §1 enforced; `presentation` never import `data` direct.
+- [ ] **Query key:** factory, all deps in (§9).
+- [ ] **Store:** granular, selector-read, `useShallow` (§6.3).
+- [ ] **State:** server→Query, UI-global→Zustand, form→RHF+Zod, local→useState.
+- [ ] **Multi-tenant:** RLS DB-enforce (NFR-01); NO client tenant filter.
+- [ ] **Security:** Zero secret in client; otorisasi=RLS, NOT UI.
+- [ ] **Validation:** Input (form, resp, param) via Zod.
+- [ ] **Token design:** Tailwind `@theme`; NO hardcode color/spacing/font.
+- [ ] **i18n:** `t("key")`; date/currency=locale ID (NFR-10).
+- [ ] **a11y:** Risk level=label+score (not color-only); AA contrast; Radix primitives (NFR-09).
+- [ ] **Sentry:** Init main.tsx; tag company_id (NFR-11).
+- [ ] **Offline:** Query `staleTime`/`gcTime`; offline badge (NFR-14).
+- [ ] **Pagination:** Keyset/cursor (NFR-06); SELECT field-specific.
+- [ ] **Test:** Vitest+RTL unit; Playwright E2E critical; RLS deny test (NFR-12).
+- [ ] **CI:** `typecheck`, `lint` MUST pass. (`test`, migration dry-run saat available).
+
+---
+
+## 📌 NFR Traceability
+
+| ID | Topic | §FRONTEND | Status |
+|----|-------|-----------|--------|
+| NFR-01 | Multi-tenant RLS | §4.2, §6.1 | ✓ |
+| NFR-02 | Performance | §9 | ✓ |
+| NFR-04 | Secrets in Vault | §4.1 | ✓ |
+| NFR-06 | Keyset pagination | §9 | ✓ |
+| NFR-09 | WCAG AA a11y | §10 | ✓ |
+| NFR-10 | i18n locale ID | §6.5 | ✓ |
+| NFR-11 | Sentry monitoring | §6.6 | ✓ |
+| NFR-12 | Test CI gates | §11 | ✓ |
+| NFR-13 | DB types + boundary | §4.0, §4.3 | ✓ |
+| NFR-14 | Offline cache | §12 | ✓ |
+| FR-RISK-2 | Typed search params | §5.2 | ✓ |
+
+---
+
+## 🔗 See Also
+
+- [frontend-structure.md](frontend-structure.md) — full guide
+- [design-system.md](design-system.md) — token, palette
+- [architecture.md](architecture.md) — clean arch rationale

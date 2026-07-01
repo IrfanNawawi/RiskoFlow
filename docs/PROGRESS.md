@@ -1,85 +1,187 @@
 # RiskoFlow — Progress Tracker
 
-Status implementasi terhadap [PRD.md](PRD.md) (v1.6). Diperbarui **2026-06-26**.
+PRD v1.6.1 status. Updated **2026-07-01**.
 
-> **Konteks penting (dual-mode):** integrasi **Supabase** kini tersedia — skema + RLS + RPC di
-> [supabase/migrations/](../supabase/migrations/), klien [src/lib/supabase.ts](../src/lib/supabase.ts),
-> `*RemoteDataSource` + hidrasi store ([src/data/remote.ts](../src/data/remote.ts)). Aktif bila `.env`
-> terisi; tanpa itu **fallback mock in-memory** ([src/data/store.ts](../src/data/store.ts)). Invarian
-> kritis (severity/level, gate ACCEPT & incident-close, audit, auto-advance, RPC
-> `create_company_with_admin`) **DB-enforced**. **Auth masih ⛔** (`currentUserId` mock; RLS permissive);
-> Edge Functions/Cron/Vault juga 🎯. Lihat [CLAUDE.md](../CLAUDE.md) "Realita vs target".
-
-**Legend:** ✅ selesai (UI+mock) · 🟡 sebagian · ⛔ belum mulai · 🎯 target (perlu backend)
+> **Dual-mode active:** Supabase optional (`VITE_SUPABASE_*` env). Fallback mock in-memory. DB-enforced invariants (severity/gate/RLS/audit) live in migrations. Auth still mock (`currentUserId`); RLS permissive. 
+> Ref: [frontend-structure.md](../.claude/guidelines/frontend-structure.md) (Clean Arch), [PRD.md](PRD.md) (spec).
 
 ---
 
-## Ringkasan
+## Status Summary
 
-| Lapis | Status |
-|---|---|
-| Fondasi frontend (stack target: bun, TanStack Router, RHF+Zod, TanStack Query, Tailwind v4) | ✅ |
-| Arsitektur Clean (domain/data/presentation + repository + DI) | 🟡 — `risks`, `incidents`, `compliance` sudah; sisanya akses store langsung |
-| Tooling (Vitest, ESLint, Prettier; gate typecheck/lint/test/build) | ✅ |
-| Code splitting (lazy routes + vendor chunk) | ✅ |
-| Backend Supabase: Postgres + skema/migrations + RLS (permissive) + RPC + trigger invarian | 🟡 — terpasang & dual-mode; **Auth ⛔**, Edge Functions/Cron/Queues/Vault 🎯 |
-| Test E2E (Playwright) + RLS (pgTAP) | ⛔ 🎯 |
-| AI Assistant — **generate risiko + saran mitigasi** via **Edge Function + Gemini** (mock saat env kosong); guard kuota/rate-limit 🎯 | ✅ |
-| Notifikasi (in-app + email) | ⛔ 🎯 |
+| Layer | Status | Notes |
+|---|---|---|
+| Frontend stack (React 19/TS, TanStack, Tailwind v4, shadcn/ui) | ✅ | All deps installed |
+| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance` full; rest direct store access |
+| Code splitting, CI gates (typecheck/lint/test/build) | ✅ | Via Vite + Vitest |
+| Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; auth+Edge Fn 🎯 |
+| AI (Edge Fn + Gemini) | ✅ | Risk + mitigation drafts; gate kuota 🎯 |
+| Notifikasi (in-app + email) | ⛔ | Cron + Queues 🎯 |
 
 ---
 
-## Status per fitur (PRD §3)
+## Fitur per PRD §3
 
-| Fitur | PRD | UI | Data layer (Clean Arch) | Backend | Status |
-|---|---|---|---|---|---|
-| Onboarding & Profil Perusahaan | §3.1 / FR-ONB | ✅ wizard 3 langkah + RHF/Zod | 🟡 via store (`createCompanyWithAdmin` mock RPC) | ⛔ | 🟡 |
-| Departemen, User & RBAC + Company Switcher | §3.2 / FR-ORG | 🟡 switcher + role demo (Topbar); **belum** CRUD dept/undang user | ⛔ store langsung | ⛔ | 🟡 |
-| Risk Register (Identifikasi) | §3.3 / FR-RISK | ✅ list, filter URL, NewRiskModal | ✅ **domain/data/presentation penuh** | ⛔ | 🟡 |
-| Analisis & Penilaian | §3.4 / FR-ASSESS | ✅ heatmap 5×5, matriks, inherent→residual | 🟡 via risks repo; **belum** form re-assessment + riwayat | ⛔ | 🟡 |
-| Respons & Mitigasi | §3.5 / FR-TREAT | ✅ form tambah/ubah treatment + approve ACCEPT + **prompt residual otomatis** saat treatment `done` (FR-TREAT-6) | ✅ via [`risks`](features/risks.md) repo + use-case | ⛔ | 🟡 |
-| Pemantauan Berkelanjutan | §3.6 / FR-MON | ✅ Catat Review (FR-MON-2, reopen FR-MON-5) + **CRUD KRI + alert terlampaui (FR-MON-4)**; **belum** cron jatuh tempo (🎯) | ✅ via [`risks`](features/risks.md) repo | ⛔ (cron 🎯) | 🟡 |
-| Incident / Loss-Event Log | §3.7 / FR-INC | ✅ catat insiden + approve close + **CTA buat-risiko-dari-insiden + auto-link (FR-INC-2)**; **belum** soft delete | ✅ **domain/data/presentation** ([doc](features/incidents.md)) | ⛔ | 🟡 |
-| AI Assistant | §3.8 / FR-AI | ✅ **Generate risiko** (FR-AI-1) + **saran mitigasi** (FR-AI-3) → draft/usulan wajib konfirmasi (FR-AI-5) + opt-out (FR-AI-7); **belum** saran penilaian (FR-AI-2) & pemantauan (FR-AI-4) | ✅ service [`ai`](features/ai.md) (Edge+Gemini; mock saat env kosong) | ✅ Edge Function `ai-suggest` + Gemini; guard kuota/rate-limit 🎯 | ✅ |
-| Kepatuhan + Library Regulasi | §3.9 / FR-COMP | ✅ seed 3 industri + mapping m:n (FR-COMP-2) + CRUD custom (FR-COMP-1) + **duplikasi sistem→custom (FR-COMP-6)** + **laporan gap `.xlsx`/`.pdf` (FR-COMP-4)** | ✅ list + CRUD + duplicate + setMapping ([doc](features/compliance.md)) | ⛔ | 🟡 |
-| Notifikasi (in-app + email) | §3.10 / FR-NOTIF | ⛔ | ⛔ | ⛔ 🎯 | ⛔ |
-| Dashboard & Reporting | §3.11 / FR-DASH | ✅ dashboard + **ekspor `.xlsx`/`.pdf`** (Register hormati filter aktif, FR-DASH-5); 🟡 Reports builder UI masih mock | 🟡 dashboard baca store/risks | ⛔ | 🟡 |
-| Audit Trail | NFR-04 | ✅ viewer audit log | 🟡 entri dibuat aksi store | ⛔ (trigger DB 🎯) | 🟡 |
+### FR-ONB: Onboarding & Profil Perusahaan (§3.1)
+- **Status:** 🟡 (UI ✅, backend mock)
+- **Tasks:**
+  - [ ] `createCompanyWithAdmin` RPC: atom new company + seed dept + create admin (D25)
+  - [ ] Pilihan tipe biz (jasa/dagang/manufaktur) → seed regulasi industri
+  - [ ] Phone format ID via Zod + format.ts
+
+### FR-ORG: Departemen, User & RBAC (§3.2)
+- **Status:** 🟡 (company switcher ✅, CRUD ⛔)
+- **Tasks:**
+  - [ ] CRUD dept: create/rename/archive (soft delete DB-enforced)
+  - [ ] Invite user: email validator + role assign (multi-role D27)
+  - [ ] RLS per company_id + role check via auth.claims()
+  - [ ] Topbar: update company_switcher live
+
+### FR-RISK: Risk Register — Identifikasi (§3.3)
+- **Status:** ✅ (full Clean Arch)
+- **Structure:** `src/features/risks/` — domain/ + data/ + validation/ + presentation/
+- **Implemented:**
+  - List + filter (FR-RISK-2: typed search params)
+  - NewRiskModal + severity computed (D4)
+  - Approval gate ACCEPT (risk_manager/admin, D20)
+  - Data layer: repo pattern ✅
+
+### FR-ASSESS: Analisis & Penilaian (§3.4)
+- **Status:** 🟡 (heatmap ✅, re-assess history ⛔)
+- **Tasks:**
+  - [ ] Heatmap 5×5 render (recharts) + memoize 500-risk limit
+  - [ ] Assessment form (inherent + residual)
+  - [ ] Riwayat penilaian: shadow table assessments.history per risk
+  - [ ] Auto residual recalc saat treatment done (FR-TREAT-6)
+
+### FR-TREAT: Respons & Mitigasi (§3.5)
+- **Status:** ✅ (form + approval ✅, prompt residual ✅)
+- **Implemented:**
+  - Treatment CRUD (avoid/reduce/transfer/accept)
+  - Approval gate + gate close (D20)
+  - Trigger residual prompt saat status=done (FR-TREAT-6)
+  - Form via RHF + Zod
+
+### FR-MON: Pemantauan Berkelanjutan (§3.6)
+- **Status:** 🟡 (review ✅, KRI ✅, cron jatuh tempo ⛔)
+- **Tasks:**
+  - [ ] Review form: next_review_date + status (FR-MON-2)
+  - [ ] KRI table CRUD (FR-MON-4): indicator name + threshold + actual
+  - [ ] Alert flag saat KRI > threshold (UI only; cron 🎯)
+  - [ ] Reopen risk saat review fail (FR-MON-5)
+
+### FR-INC: Incident / Loss-Event Log (§3.7)
+- **Status:** ✅ (form ✅, link risk ✅, close gate ✅)
+- **Implemented:**
+  - Record insiden form (date/category/loss/root cause)
+  - Approve close gate (≥ threshold, D18)
+  - CTA: create-risk-from-incident + auto-link (FR-INC-2)
+  - Data layer: full domain/data/presentation
+
+### FR-AI: AI Assistant (§3.8)
+- **Status:** ✅ (risk + mitigation draft; assess/monitor 🎯)
+- **Implemented:**
+  - FR-AI-1: Generate risiko per dept (Edge Fn + Gemini)
+  - FR-AI-3: Saran mitigasi (draft → confirm required, D6)
+  - Opt-out per user (FR-AI-7)
+  - Fallback mock saat `.env` empty
+- **Remaining 🎯:**
+  - FR-AI-2: Saran penilaian
+  - FR-AI-4: Saran pemantauan
+
+### FR-COMP: Kepatuhan + Library Regulasi (§3.9)
+- **Status:** ✅ (CRUD ✅, laporan ✅, duplikasi ✅)
+- **Implemented:**
+  - Seed 3 industri (jasa/dagang/manufaktur)
+  - CRUD custom requirement (FR-COMP-1)
+  - Mapping m:n risk ↔ requirement (FR-COMP-2)
+  - Duplicate sistem → custom (FR-COMP-6)
+  - Gap report `.xlsx`/`.pdf` (FR-COMP-4)
+  - Data layer: full Clean Arch
+
+### FR-NOTIF: Notifikasi (§3.10)
+- **Status:** ⛔ (🎯 Cron + Queues + email service)
+- **Tasks:**
+  - [ ] In-app: toast/modal at review due + insiden approved
+  - [ ] Email via Supabase Queues: digest harian
+  - [ ] Cron: scan next_review_date, flag alert (daily 09:00)
+
+### FR-DASH: Dashboard & Reporting (§3.11)
+- **Status:** 🟡 (ekspor ✅, builder UI mock)
+- **Implemented:**
+  - Dashboard: risk count + heatmap + top mitigasi
+  - Ekspor Risk Register `.xlsx`/`.pdf` respecting filter (lazy chunk)
+- **Tasks:**
+  - [ ] Reports builder: UI select column + filter (mock only)
+  - [ ] Data layer migrate dari direct store access
+
+### NFR-04: Audit Trail
+- **Status:** 🟡 (viewer ✅, entries created; trigger 🎯)
+- **Implemented:**
+  - Audit log viewer page
+  - Action logged saat store mutation
+- **Tasks:**
+  - [ ] DB trigger: insert audit per company_id (RLS enforce)
+  - [ ] Soft delete: `deleted_at` not null, still audit-visible
 
 ---
 
-## Detail status (acceptance criteria menonjol)
+## Architecture Checklist (per frontend-structure.md §14)
 
-### ✅ Sudah jalan (mock)
-- Routing typed + **typed search params** untuk filter Risk Register (FR-RISK-2) — [search.ts](../src/features/risks/search.ts).
-- Severity → level dari satu sumber kanonik `computeRiskLevel` (D4) — [risk.ts](../src/lib/risk.ts).
-- Gate approval ACCEPT hanya `risk_manager`/`admin` (FR-TREAT-3) — [approveTreatment.usecase.ts](../src/features/risks/domain/use-cases/approveTreatment.usecase.ts).
-- Gate approval tutup insiden besar ≥ threshold (FR-INC-6) — di store `approveIncidentClose`.
-- Multi-tenant scope per perusahaan aktif + company switcher (FR-ORG-6) — query key menyertakan `companyId`.
-- Seed library regulasi per industri saat onboarding (FR-COMP-5) — store `createCompanyWithAdmin`.
-- Uang = integer IDR via [format.ts](../src/lib/format.ts).
-
-### 🟡 Sebagian / perlu dilengkapi
-- **Otorisasi nyata** masih UI-only (`can()`/`myRoles()`); RLS = 🎯 (NFR-02).
-- Invariant kritis (severity generated column, auto-advance insiden, guard last-admin/dept-delete) ditiru di store; **DB-enforced = 🎯** (D22).
-- Form: treatment ✅, catat insiden ✅, mapping kepatuhan ✅, catat review ✅, CRUD requirement custom ✅, **KRI** ✅, **buat-risiko-dari-insiden** ✅, **duplikasi regulasi** ✅, **laporan gap** ✅.
-- Ekspor laporan `.xlsx`/`.pdf` (FR-DASH-5) ✅ — [`@/lib/export`](../src/lib/export.ts); Risk Register hormati filter aktif, lib di-`import()` dinamis (lazy chunk).
-
-### ⛔ Belum mulai (butuh backend / layanan)
-- AI Assistant 4 tahap via Edge Function + Gemini (FR-AI) + sanitasi payload (NFR-08).
-- Notifikasi in-app + email via Cron + Queues (FR-NOTIF).
-- Auth Supabase (login/invite), RLS, migrations, RPC provisioning atomik (NFR-01/13, D25).
-- Test E2E (Playwright) & RLS test (pgTAP) (NFR-12).
+- [ ] **Dependency rule:** presentation → domain ← data. Zero React/DB in domain.
+- [ ] **DTO boundary:** Mapper + Zod enforce; DTO not in presentation.
+- [ ] **Use-case:** Only permission gate / multi-step logic; else hook → repo.
+- [ ] **RLS:** All queries scope company_id via RLS policy + JWT.
+- [ ] **DB types:** `supabase gen types` → `database.types.ts`; entity ≠ DTO.
+- [ ] **I18n:** Hardcoded → `t("key")`. Date/currency locale ID.
+- [ ] **Sentry:** Init main.tsx; error tracking live.
+- [ ] **Offline:** `staleTime`/`gcTime`; offline badge when net down.
+- [ ] **Keyset pagination:** Cursor-based; SELECT specific fields.
+- [ ] **UI tokens:** Tailwind utility; risk level = label + score + color (AA contrast).
+- [ ] **Tests:** Vitest unit; Playwright E2E critical path.
+- [ ] **CI gates:** typecheck + lint + test + migration dry-run (MUST pass).
 
 ---
 
-## Langkah berikutnya (saran urutan)
+## Next Steps (Prioritized)
 
-1. ✅ ~~Replikasi pola data layer `risks` ke **incidents** & **compliance**.~~ (selesai 2026-06-26)
-2. Form mock: ~~catat insiden, treatment, review+residual, KRI (FR-MON-4), buat-risiko-dari-insiden (FR-INC-2)~~ ✅; berikutnya: soft delete insiden, riwayat penilaian.
-3. Kepatuhan: ~~mapping (FR-COMP-2), CRUD custom (FR-COMP-1), laporan gap (FR-COMP-4), duplikasi sistem (FR-COMP-6)~~ ✅; berikutnya: mapping treatment↔requirement.
-6. **Auth Supabase** (login/invite) + ganti `currentUserId` mock → `auth.uid()` + perketat RLS dari permissive (NFR-02). Lalu Edge Functions (AI), Cron (review due), Queues/email.
-4. Replikasi data layer ke sisa fitur (dashboard/reports/audit/onboarding) bila disentuh.
-5. Saat Supabase tersedia: ganti `*MockDataSource` → `*RemoteDataSource`, aktifkan RLS + Auth, lalu AI & Notifikasi.
+**Tier 1 (unblock main features):**
+1. Auth Supabase: login/logout + invite flow + swap `currentUserId` → `auth.uid()`
+2. Tighten RLS: change permissive → definer; test cross-company deny (pgTAP)
+3. FR-MON cron: daily scan next_review_date, flag stale (Cron job)
 
-> Cara update file ini: saat menyelesaikan/menambah fitur, perbarui baris status terkait **pada commit yang sama** (konsisten dengan aturan dok di [technical-writing.md](../.claude/guidelines/technical-writing.md)).
+**Tier 2 (post-core):**
+4. FR-NOTIF: Queues + email template (Sendgrid / Resend integration via Vault)
+5. FR-AI-2/4: Extend Edge Fn for assessment + monitoring suggestions
+6. Dashboard data layer: migrate direct store → repository
+
+**Tier 3 (polish):**
+7. E2E tests (Playwright): auth → register → assess → treat → monitor
+8. RLS tests (pgTAP): verify cross-tenant denial
+9. Soft delete + audit cleanup per retention policy
+
+---
+
+## Dual-Mode (Mock ↔ Supabase)
+
+**With `.env` empty:** Mock in-memory store (`src/data/store.ts`).
+**With `.env` filled:** Supabase remote data source (`src/data/remote.ts`).
+
+Key wiring:
+- `src/lib/supabase.ts` — Supabase client init (TS types from `database.types.ts`)
+- `src/data/remote.ts` — RemoteDataSource factory; fallback mock if env missing
+- `src/features/*/data/repositories/` — Implement IRepository; swap data source at DI level
+
+**Migration path:** Feature complete in mock → add RemoteDataSource + migrate DI → activate Supabase env.
+
+---
+
+## Docs Reference
+
+- **PRD.md** — spec source of truth
+- **frontend-structure.md** — arch rules, layer rules, checklist
+- **features/** — per-feature domain/data/validation docs
+- **PRD-RULE.md** — doc authoring rules
+- **architecture.md** — Clean Arch rationale
+
+Update PROGRESS.md per commit; keep task breakdowns concrete + scanned regularly.

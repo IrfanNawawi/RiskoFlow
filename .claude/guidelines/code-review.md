@@ -1,96 +1,141 @@
 # Code Review — Checklist
 
-Checklist review diff RiskoFlow (web SPA). Dipakai juga oleh subagent `code-reviewer`.
-Fokus pada hal penting; jangan rewel soal selera yang nantinya diatur Prettier/ESLint.
+Checklist review diff RiskoFlow (web SPA). Dipakai subagent `code-reviewer`.
+Fokus penting; jangan selera (Prettier/ESLint). Ref: [frontend-structure.md](frontend-structure.md).
 
-## Cara review
+## Review Process
 
-1. Pahami tujuan perubahan dulu (baca deskripsi/PR/commit).
-2. Telusuri diff per file. Catat temuan dengan **severity** + **lokasi `file:line`** + **saran konkret**.
-3. Bedakan **🔴 blocker** (harus diperbaiki), **🟠 sebaiknya**, **🟢 nit/opsional**.
-4. Jika ragu apakah sesuatu bug, katakan ragu — jangan mengarang kepastian.
+1. Pahami tujuan (PR/commit).
+2. Per file: temuan + **severity** + **file:line** + fix konkret.
+3. Severity: **🔴 blocker** | **🟠 sebaiknya** | **🟢 nit**.
+4. Ragu bug? Bilang ragu, jangan prediksi.
 
-## Arsitektur & dependency rule
+---
 
-- [ ] Kode fitur ada di `src/features/<f>/` dengan layer yang benar (lihat [frontend-structure.md](frontend-structure.md)).
-- [ ] `domain` tidak import dari `data`/`presentation`/framework (React/Supabase/UI).
-- [ ] `presentation` tidak import `data` langsung (wiring via hook DI).
-- [ ] DTO tidak bocor ke `presentation` — ada mapper DTO → entity + validasi Zod (saat data layer nyata).
-- [ ] **Entity = `type` + pure function**, bukan class dengan getter.
-- [ ] **Use-case hanya bila ada business logic** — tidak ada use-case kosong/passthrough.
+## Arsitektur & Dependency (§1 frontend-structure)
 
-## State & data
+- [ ] Fitur: `src/features/<f>/` layer benar (§2).
+  - `domain`: type + pure fn **zero** React/Supabase/UI.
+  - `data`: DTO → entity mapper + Zod; RLS enforce DB.
+  - `presentation`: import domain + @/lib, **TIDAK data** langsung.
+- [ ] DTO boundary: mapper + Zod (§4.3) → entity, TIDAK leak presentation.
+- [ ] Entity = `type` + pure fn, **bukan class**.
+- [ ] Use-case hanya if business logic (§13); skip passthrough/form/UI toggle.
 
-- [ ] Server state lewat TanStack Query (bukan `useEffect` + fetch manual).
-- [ ] Client/UI state global lewat Zustand (store granular, akses via selector/`useShallow`).
-- [ ] Form lewat react-hook-form + `zodResolver`; input eksternal (form/respons/search param) divalidasi Zod.
-- [ ] `queryKey` benar (semua deps + tenant masuk); invalidation tepat; tak ada race condition.
+---
 
-## Korektitas
+## State & Data (§5, §6 frontend-structure)
 
-- [ ] Logika sesuai maksud; cek off-by-one, kondisi batas, `null`/`undefined`.
-- [ ] `async`/`await` benar; promise tidak menggantung; error tidak ditelan.
-- [ ] State update tidak memicu render loop; dependency array hook benar.
-- [ ] Nilai finansial = **integer IDR** (tak ada float); format lewat `@/lib/format`.
+- [ ] Server state: TanStack Query, TIDAK `useEffect` + fetch manual.
+- [ ] Global state: Zustand granular (selector/`useShallow`).
+- [ ] Form: RHF + `zodResolver`; eksternal input (form/search/respons) validasi Zod.
+- [ ] Query key: semua deps + tenant; invalidation tepat; race-free.
+- [ ] **Multi-tenant: `company_id` RLS enforce DB (§4.2, §6.1, NFR-01); client trust JWT scope.**
 
-## TypeScript & kualitas
+---
 
-- [ ] Tidak ada `any` baru / `@ts-ignore` tanpa alasan; pakai `unknown` + narrow.
-- [ ] `import type` untuk tipe (wajib — `verbatimModuleSyntax`); tak ada non-null `!` tanpa guard.
-- [ ] Tidak ada import/variabel mati (`noUnusedLocals`/`noUnusedParameters` menyala).
-- [ ] Tidak ada duplikasi yang bisa direuse; komponen/fungsi tidak kebanyakan tanggung jawab.
-- [ ] Penamaan sesuai [coding-rules.md](coding-rules.md).
+## Korektitas & Logika
 
-## React & UI
+- [ ] Logic intent sesuai; off-by-one, edge (null/undefined).
+- [ ] `async`/`await` benar; promise TIDAK gantung; error TIDAK ditelan.
+- [ ] State update TIDAK render loop; hook deps benar.
+- [ ] **Finansial: integer IDR TIDAK float (§6.5, NFR-10); format via `@/lib/format`.**
 
-- [ ] `key` list pakai id stabil (bukan index).
-- [ ] `useCallback`/`useMemo` dipakai tepat (tidak kurang, tidak berlebihan).
-- [ ] Styling via token Tailwind (`@theme`)/`@/components/ui`, **bukan hex/px hardcode**.
-- [ ] **Responsif**: grid/komponen tidak pecah di mobile maupun desktop; tak ada overflow.
-- [ ] **a11y**: level risiko pakai label + skor (bukan hanya warna); ikon-only punya `aria-label`; kontras AA.
+---
 
-## Performa
+## TypeScript & Kualitas
 
-- [ ] Page route baru di-`lazyRouteComponent` (code splitting) di [main.tsx](../../src/main.tsx); tidak menambah import berat ke entry/eager chunk.
-- [ ] Lib berat (mis. `recharts`) tidak diimpor di modul yang selalu dimuat; biarkan masuk chunk `charts`/lazy.
-- [ ] Tidak ada pekerjaan mahal di render (loop besar/clone) tanpa `useMemo`; list panjang tidak re-render seluruhnya.
+- [ ] TIDAK `any` / `@ts-ignore` baru (pakai `unknown` + narrow).
+- [ ] `import type` wajib (`verbatimModuleSyntax`); TIDAK non-null `!` tanpa guard.
+- [ ] TIDAK dead import/var (`noUnusedLocals`/`noUnusedParameters` on).
+- [ ] TIDAK duplikasi reusable; tanggung jawab jelas.
+- [ ] Naming: [coding-rules.md](coding-rules.md).
 
-## Multi-tenant & keamanan (prioritas tinggi)
+---
 
-- [ ] **Tidak ada secret/service-role key/API key** di diff; konfig publik hanya `VITE_*` (anon key).
-- [ ] Tidak ada log PII/token/respons sensitif.
-- [ ] Data di-scope **perusahaan aktif**; tak ada kebocoran antar tenant; key cache menyertakan tenant.
-- [ ] Otorisasi nyata mengandalkan **RLS/policy**, bukan sekadar UI (`can()` hanya UX).
-- [ ] Akses data lewat repository/layer, bukan komponen memanggil Supabase client langsung.
+## React & UI (§7, §10 frontend-structure)
 
-## Test (Vitest sudah terpasang)
+- [ ] List `key`: id stabil (TIDAK index).
+- [ ] `useCallback`/`useMemo` tepat (TIDAK kurang/lebih).
+- [ ] Styling: token Tailwind (`@theme`) / `@/components/ui` (TIDAK hex/px).
+- [ ] **Responsif mobile → lg, TIDAK overflow.**
+- [ ] **a11y (§10, NFR-09):** level + skor (TIDAK hanya warna); ikon-only `aria-label`; kontras ≥AA.**
 
-- [ ] Logika baru (use-case, mapper, schema, pure function) punya test unit — `bun run test` hijau.
-- [ ] Edge case tercakup (null, data rusak, error path, empty state).
-- [ ] Mapper/validasi: kasus DTO rusak → `null`/ditolak ada di test (lihat [testing.md](testing.md)).
+---
 
-## Dokumentasi (sinkron pada commit yang sama)
+## Performa (§9 frontend-structure, NFR-02)
 
-- [ ] Fitur baru/refactor: `docs/features/<fitur>.md` (dari [_TEMPLATE.md](../../docs/_TEMPLATE.md)) dibuat/diperbarui.
-- [ ] Perubahan status fitur tercermin di [PROGRESS.md](../../docs/PROGRESS.md).
-- [ ] Ubah stack/alias/perintah/arsitektur → guideline `.claude/guidelines/` diperbarui (tak ada path mati).
+- [ ] Route baru: `lazyRouteComponent` di [main.tsx](../../src/main.tsx) (code-split).
+- [ ] Lib berat (recharts): lazy chunk, TIDAK eager import.
+- [ ] Render: TIDAK mahal work (loop/clone) tanpa `useMemo`; list panjang TIDAK re-render all.
+- [ ] Query: keyset pagination (§9, NFR-06); `SELECT` field-specific TIDAK `*`; `staleTime`/`gcTime` set.
 
-## Dependency
+---
 
-- [ ] Tidak ada dependency baru tanpa justifikasi/konfirmasi; versi **di-pin exact**.
-- [ ] Lib yang di-import benar-benar ada di [package.json](../../package.json).
+## DB & Types (§4.0, §4.3 frontend-structure, NFR-13)
 
-## Gate
+- [ ] DB types generated: `supabase gen types` → `database.types.ts`.
+- [ ] DTO snake_case (`database.types`), entity camelCase (`@/data/types`).
+- [ ] Presentation import **entity only**, TIDAK DTO.
 
-- [ ] `bun run typecheck`, `bun run lint`, `bun run test`, & `bun run build` semuanya hijau.
+---
 
-## Format output review
+## Offline & i18n (§12, §6.5 frontend-structure, NFR-14, NFR-10)
+
+- [ ] Cache strategy: Query `staleTime`/`gcTime`; offline badge saat disconnect (§12).
+- [ ] i18n: hardcode string → `t("key")`; tanggal/IDR pakai locale ID (§6.5).
+- [ ] **Sentry init main.tsx; error tracking live (§6.6, NFR-11).**
+
+---
+
+## Keamanan & Multi-tenant (NFR-04, NFR-01)
+
+- [ ] TIDAK secret/service-key/API-key di diff; publik = `VITE_*` (anon) (§4.1).
+- [ ] TIDAK PII/token/sensitif log.
+- [ ] RLS enforce tenant; cache key include `company_id` (§4.2, NFR-01).
+- [ ] Auth: repository layer TIDAK Supabase client langsung; DI hook (§6.1).
+
+---
+
+## Test (Vitest, §11 frontend-structure, NFR-12)
+
+- [ ] Logika baru (use-case, mapper, schema, pure fn): unit test, `bun run test` hijau.
+- [ ] Edge case: null, corrupt, error path, empty.
+- [ ] Mapper/Zod: corrupt DTO → reject di test (§4.3, [testing.md](testing.md)).
+- [ ] E2E critical: auth → onboarding → register → review/treat (Playwright).
+- [ ] **RLS test mandatory (D23):** cross-tenant TIDAK akses.
+
+---
+
+## Dokumentasi (§14 frontend-structure)
+
+- [ ] Feature baru/refactor: `docs/features/<f>.md` (from [_TEMPLATE.md](../../docs/_TEMPLATE.md)).
+- [ ] Status di [PROGRESS.md](../../docs/PROGRESS.md).
+- [ ] Stack/alias/cmd/arch change → update guideline (TIDAK broken path).
+
+---
+
+## Dependency & CI
+
+- [ ] TIDAK dep baru tanpa why/confirm; versi **exact pin**.
+- [ ] Import = di [package.json](../../package.json).
+- [ ] `bun run typecheck`, `lint`, `test`, `build` — **ALL GREEN (§14, NFR-12).**
+
+---
+
+## Output Format
 
 ```
-🔴 [src/features/risks/data/mappers/risk.mapper.ts:42] DTO bocor ke presentation.
-   Page meng-import RiskDTO langsung — seharusnya entity Risk.
-   Saran: kembalikan hasil mapper, jangan teruskan DTO.
+🔴 src/features/risks/data/mappers/risk.mapper.ts:42
+   DTO leak: Page import RiskDTO direct (should entity Risk).
+   Fix: return mapper result, don't pass DTO.
+
+🟠 src/features/risks/presentation/hooks/useRisks.ts:15
+   Query key missing tenant. Include company_id (NFR-01).
+   Fix: [..., companyId] in queryKey.
+
+🟢 src/features/risks/domain/entities/risk.ts:8
+   Nit: rename param p1 → risk (clarity).
 ```
 
-Tutup dengan ringkasan: jumlah blocker/sebaiknya/nit, dan rekomendasi (layak merge / perlu
-perbaikan). Jika tidak ada blocker, katakan jelas.
+**Summary:** 1 blocker, 1 improve, 1 nit. Merge after fix blocker/improve.
