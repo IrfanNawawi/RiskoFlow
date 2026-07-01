@@ -106,6 +106,11 @@ const auditRoute = createRoute({
   path: "/audit",
   component: lazyPage(() => import("@/features/audit/AuditPage"), "AuditPage"),
 });
+const orgRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/organisasi",
+  component: lazyPage(() => import("@/features/org/presentation/pages/OrgPage"), "OrgPage"),
+});
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -118,6 +123,7 @@ const routeTree = rootRoute.addChildren([
     complianceRoute,
     reportsRoute,
     auditRoute,
+    orgRoute,
   ]),
 ]);
 

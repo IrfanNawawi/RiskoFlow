@@ -8,6 +8,7 @@ const NAV = [
   { to: "/incidents", label: "Insiden", icon: "report" },
   { to: "/compliance", label: "Compliance", icon: "verified_user" },
   { to: "/reports", label: "Reports", icon: "bar_chart" },
+  { to: "/organisasi", label: "Organisasi", icon: "groups" },
   { to: "/audit", label: "Audit Trail", icon: "history" },
 ] as const;
 
