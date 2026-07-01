@@ -64,6 +64,21 @@ function buildKri(id: string, input: KriInput): Kri {
   };
 }
 
+interface DepartmentInput {
+  name: string;
+  description?: string;
+  headUserId?: string;
+}
+
+interface InviteMemberInput {
+  name: string;
+  email: string;
+  roles: MembershipRole[];
+}
+
+/** Hasil aksi org yang bergerbang (guard DB di target); UI pakai `reason` untuk toast. */
+export type OrgResult = { ok: true } | { ok: false; reason: string };
+
 interface ReviewInput {
   likelihood: number;
   impact: number;
@@ -117,12 +132,21 @@ interface State {
   userById: (id: string) => User | undefined;
   deptById: (id: string) => Department | undefined;
   activeDepartments: () => Department[];
+  activeMembers: () => Array<{ membershipId: string; user: User; roles: MembershipRole[] }>;
   activeRisks: () => Risk[];
   activeIncidents: () => Incident[];
   activeCompliance: () => ComplianceRequirement[];
   activeAudit: () => AuditEntry[];
 
   // actions
+  // FR-ORG: departemen & anggota (mock; guard ditiru dari trigger DB target)
+  addDepartment: (input: DepartmentInput) => OrgResult;
+  updateDepartment: (id: string, input: DepartmentInput) => OrgResult;
+  archiveDepartment: (id: string) => OrgResult;
+  inviteMember: (input: InviteMemberInput) => OrgResult;
+  updateMemberRoles: (userId: string, roles: MembershipRole[]) => OrgResult;
+  removeMember: (userId: string) => OrgResult;
+
   setActiveCompany: (id: string) => void;
   setRole: (role: MembershipRole | "all") => void; // demo role impersonation
   demoRole: MembershipRole | "all";
@@ -231,7 +255,14 @@ export const useStore = create<State>((set, get) => ({
   },
   userById: (id) => get().users.find((u) => u.id === id),
   deptById: (id) => get().departments.find((d) => d.id === id),
-  activeDepartments: () => get().departments.filter((d) => d.companyId === get().activeCompanyId),
+  activeDepartments: () => get().departments.filter((d) => d.companyId === get().activeCompanyId && !d.archivedAt),
+  activeMembers: () => {
+    const { memberships, activeCompanyId, users } = get();
+    return memberships
+      .filter((m) => m.companyId === activeCompanyId)
+      .map((m) => ({ membershipId: m.id, user: users.find((u) => u.id === m.userId)!, roles: m.roles }))
+      .filter((x) => x.user); // buang membership tanpa user (data tak konsisten)
+  },
   activeRisks: () => get().risks.filter((r) => r.companyId === get().activeCompanyId && !r.deletedAt),
   activeIncidents: () => get().incidents.filter((i) => i.companyId === get().activeCompanyId),
   activeCompliance: () => get().compliance.filter((c) => c.companyId === get().activeCompanyId),
@@ -245,6 +276,110 @@ export const useStore = create<State>((set, get) => ({
         c.id === s.activeCompanyId ? { ...c, aiEnabled: !c.aiEnabled } : c,
       ),
     })),
+
+  addDepartment: (input) => {
+    const name = input.name.trim();
+    const cid = get().activeCompanyId;
+    if (!name) return { ok: false, reason: "Nama departemen wajib diisi" };
+    const dup = get().departments.some(
+      (d) => d.companyId === cid && !d.archivedAt && d.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (dup) return { ok: false, reason: `Departemen "${name}" sudah ada` };
+    const dept: Department = {
+      id: `d-${cid}-${Date.now()}`,
+      companyId: cid,
+      name,
+      description: input.description?.trim() || undefined,
+      headUserId: input.headUserId || undefined,
+    };
+    set((s) => ({
+      departments: [...s.departments, dept],
+      audit: [logAudit(get, { actor: nameOf(get), action: "CREATE", entity: `Department ${name}`, detail: `Departemen "${name}" dibuat` }), ...s.audit],
+    }));
+    return { ok: true };
+  },
+
+  updateDepartment: (id, input) => {
+    const name = input.name.trim();
+    const cid = get().activeCompanyId;
+    if (!name) return { ok: false, reason: "Nama departemen wajib diisi" };
+    const dup = get().departments.some(
+      (d) => d.id !== id && d.companyId === cid && !d.archivedAt && d.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (dup) return { ok: false, reason: `Departemen "${name}" sudah ada` };
+    set((s) => ({
+      departments: s.departments.map((d) =>
+        d.id === id ? { ...d, name, description: input.description?.trim() || undefined, headUserId: input.headUserId || undefined } : d,
+      ),
+      audit: [logAudit(get, { actor: nameOf(get), action: "UPDATE", entity: `Department ${name}`, detail: `Departemen "${name}" diperbarui` }), ...s.audit],
+    }));
+    return { ok: true };
+  },
+
+  archiveDepartment: (id) => {
+    const dept = get().departments.find((d) => d.id === id);
+    if (!dept) return { ok: false, reason: "Departemen tidak ditemukan" };
+    // Guard (FR-ORG-002): tak boleh arsip bila masih ada risiko/insiden aktif.
+    const hasRisk = get().risks.some((r) => r.departmentId === id && !r.deletedAt);
+    const hasIncident = get().incidents.some((i) => i.departmentId === id && i.status !== "closed");
+    if (hasRisk || hasIncident) return { ok: false, reason: "Pindahkan/arsipkan risiko & insiden aktif departemen ini dahulu" };
+    set((s) => ({
+      departments: s.departments.map((d) => (d.id === id ? { ...d, archivedAt: new Date().toISOString() } : d)),
+      audit: [logAudit(get, { actor: nameOf(get), action: "DELETE", entity: `Department ${dept.name}`, detail: `Departemen "${dept.name}" diarsipkan` }), ...s.audit],
+    }));
+    return { ok: true };
+  },
+
+  inviteMember: (input) => {
+    const cid = get().activeCompanyId;
+    const email = input.email.trim();
+    if (input.roles.length === 0) return { ok: false, reason: "Pilih minimal satu peran" };
+    const existingUser = get().users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser && get().memberships.some((m) => m.companyId === cid && m.userId === existingUser.id)) {
+      return { ok: false, reason: "Pengguna sudah menjadi anggota perusahaan ini" };
+    }
+    const userId = existingUser?.id ?? `u-${Date.now()}`;
+    const user: User = existingUser ?? { id: userId, name: input.name.trim(), email, initials: initialsOf(input.name) };
+    const membership: Membership = { id: `mem-${cid}-${userId}`, companyId: cid, userId, roles: input.roles };
+    set((s) => ({
+      users: existingUser ? s.users : [...s.users, user],
+      memberships: [...s.memberships, membership],
+      audit: [logAudit(get, { actor: nameOf(get), action: "CREATE", entity: `Member ${user.name}`, detail: `${user.name} diundang (${input.roles.join(", ")})` }), ...s.audit],
+    }));
+    return { ok: true };
+  },
+
+  updateMemberRoles: (userId, roles) => {
+    const cid = get().activeCompanyId;
+    if (roles.length === 0) return { ok: false, reason: "Pilih minimal satu peran" };
+    const target = get().memberships.find((m) => m.companyId === cid && m.userId === userId);
+    if (!target) return { ok: false, reason: "Anggota tidak ditemukan" };
+    const admins = get().memberships.filter((m) => m.companyId === cid && m.roles.includes("admin"));
+    // Guard last-admin (FR-ORG-002): cegah menurunkan admin terakhir.
+    if (target.roles.includes("admin") && !roles.includes("admin") && admins.length === 1) {
+      return { ok: false, reason: "Minimal satu admin aktif diperlukan" };
+    }
+    set((s) => ({
+      memberships: s.memberships.map((m) => (m.companyId === cid && m.userId === userId ? { ...m, roles } : m)),
+      audit: [logAudit(get, { actor: nameOf(get), action: "UPDATE", entity: `Member ${userNameOf(get, userId)}`, detail: `Peran diperbarui: ${roles.join(", ")}` }), ...s.audit],
+    }));
+    return { ok: true };
+  },
+
+  removeMember: (userId) => {
+    const cid = get().activeCompanyId;
+    const target = get().memberships.find((m) => m.companyId === cid && m.userId === userId);
+    if (!target) return { ok: false, reason: "Anggota tidak ditemukan" };
+    const admins = get().memberships.filter((m) => m.companyId === cid && m.roles.includes("admin"));
+    if (target.roles.includes("admin") && admins.length === 1) {
+      return { ok: false, reason: "Minimal satu admin aktif diperlukan" };
+    }
+    set((s) => ({
+      memberships: s.memberships.filter((m) => !(m.companyId === cid && m.userId === userId)),
+      audit: [logAudit(get, { actor: nameOf(get), action: "DELETE", entity: `Member ${userNameOf(get, userId)}`, detail: "Anggota dikeluarkan dari perusahaan" }), ...s.audit],
+    }));
+    return { ok: true };
+  },
 
   addRisk: (input) => {
     const level = computeRiskLevel(input.likelihood, input.impact);
@@ -651,4 +786,14 @@ function nameOf(get: () => State): string {
 }
 function idCode(get: () => State, riskId: string): string {
   return get().risks.find((r) => r.id === riskId)?.code ?? riskId;
+}
+function userNameOf(get: () => State, userId: string): string {
+  return get().users.find((u) => u.id === userId)?.name ?? userId;
+}
+// Inisial dari nama: 1 kata → 2 huruf pertama; >1 kata → huruf pertama depan+belakang.
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

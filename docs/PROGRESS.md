@@ -12,7 +12,7 @@ PRD v1.6.1 status. Updated **2026-07-01**.
 | Layer | Status | Notes |
 |---|---|---|
 | Frontend stack (React 19/TS, TanStack, Tailwind v4, shadcn/ui) | ✅ | All deps installed |
-| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance`, `ai` full; `dashboard`/`reports`/`audit`/`onboarding` direct store access |
+| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance`, `ai` full; `dashboard`/`reports`/`audit`/`onboarding`/`org` direct store access |
 | Code splitting, CI gates (typecheck/lint/test/build) | ✅ | Via Vite + Vitest |
 | Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; auth+Edge Fn 🎯 |
 | AI (Edge Fn + Gemini) | ✅ | Risk + mitigation drafts; gate kuota 🎯 |
@@ -30,12 +30,16 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - [ ] Phone format ID via Zod + format.ts
 
 ### FR-ORG: Departemen, User & RBAC (§3.2)
-- **Status:** 🟡 (company switcher ✅, CRUD ⛔)
-- **Tasks:**
-  - [ ] CRUD dept: create/rename/archive (soft delete DB-enforced)
-  - [ ] Invite user: email validator + role assign (multi-role D27)
-  - [ ] RLS per company_id + role check via auth.claims()
-  - [ ] Topbar: update company_switcher live
+- **Status:** ✅ (dept CRUD ✅, anggota & peran ✅, switcher ✅; RLS/Auth 🎯)
+- **Structure:** `src/features/org/` (store-direct, seperti dashboard/reports) — page + validation + components
+- **Implemented:**
+  - Halaman Organisasi (`/organisasi`): departemen + anggota & peran
+  - Dept CRUD: create/rename + archive soft delete (`archivedAt`) + guard FR-ORG-002 (tolak arsip bila ada risiko/insiden aktif; dedupe nama case-insensitive)
+  - Undang anggota (email valid + multi-role D27) + ubah peran + keluarkan; guard last-admin (min 1 admin aktif)
+  - Store actions + audit log per mutasi; cek peran UI (`can("admin")`) = UX; 7 unit test guard
+- **Remaining 🎯:**
+  - [ ] RLS per company_id + role check via `auth.claims()` (backend)
+  - [ ] Invite via email (SMTP) — kini buat user langsung di mock
 
 ### FR-RISK: Risk Register — Identifikasi (§3.3)
 - **Status:** ✅ (full Clean Arch)

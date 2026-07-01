@@ -55,6 +55,7 @@ export interface Department {
   name: string;
   description?: string;
   headUserId?: string;
+  archivedAt?: string; // soft delete (FR-ORG); departemen tetap terekam untuk audit
 }
 
 export interface User {
