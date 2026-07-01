@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/data/store";
 import { Card, Icon, Button, Pagination } from "@/components/ui";
 import { fmtDate, idr, idrCompact, cn } from "@/lib/format";
-import { useIncidents } from "./presentation/hooks/useIncidents";
-import { useApproveIncidentClose, useLinkIncidentRisk } from "./presentation/hooks/useIncidentMutations";
-import { NewIncidentModal } from "./presentation/components/NewIncidentModal";
+import { useIncidents } from "../hooks/useIncidents";
+import { useApproveIncidentClose, useLinkIncidentRisk } from "../hooks/useIncidentMutations";
+import { NewIncidentModal } from "../components/NewIncidentModal";
 import { NewRiskModal } from "@/components/NewRiskModal";
 import type { Incident } from "@/data/types";
 

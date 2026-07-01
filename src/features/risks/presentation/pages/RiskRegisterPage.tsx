@@ -8,8 +8,8 @@ import { Heatmap, HeatmapLegend } from "@/components/Heatmap";
 import { CATEGORY_META, SOURCE_META, STATUS_META } from "@/lib/risk";
 import { cn, relativeDays } from "@/lib/format";
 import { buildRiskExportRows, exportRowsToXlsx, exportRowsToPdf, todayStamp } from "@/lib/export";
-import { useRisks } from "./presentation/hooks/useRisks";
-import { useConfirmAiRisk } from "./presentation/hooks/useRiskMutations";
+import { useRisks } from "../hooks/useRisks";
+import { useConfirmAiRisk } from "../hooks/useRiskMutations";
 import { GenerateAiModal } from "@/features/ai";
 import type { Risk } from "@/data/types";
 

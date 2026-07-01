@@ -4,10 +4,10 @@ import { useStore } from "@/data/store";
 import { Card, Icon, Button } from "@/components/ui";
 import { cn } from "@/lib/format";
 import { buildComplianceReportRows, exportRowsToXlsx, exportRowsToPdf, todayStamp } from "@/lib/export";
-import { useCompliances } from "./presentation/hooks/useCompliances";
-import { useRemoveCompliance, useDuplicateCompliance } from "./presentation/hooks/useComplianceMutations";
-import { ComplianceMappingModal } from "./presentation/components/ComplianceMappingModal";
-import { ComplianceFormModal } from "./presentation/components/ComplianceFormModal";
+import { useCompliances } from "../hooks/useCompliances";
+import { useRemoveCompliance, useDuplicateCompliance } from "../hooks/useComplianceMutations";
+import { ComplianceMappingModal } from "../components/ComplianceMappingModal";
+import { ComplianceFormModal } from "../components/ComplianceFormModal";
 import type { ComplianceStatus, ComplianceRequirement } from "@/data/types";
 
 const FRAMEWORK_STEP = 4;
