@@ -13,7 +13,7 @@ import {
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import { AppShell } from "@/components/AppShell";
-import { riskSearchSchema } from "@/features/risks/search";
+import { riskSearchSchema } from "@/features/risks/validation/search.schema";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { SNAPSHOT_KEY } from "@/data/remote";
 import { RemoteHydrationGate } from "@/data/RemoteHydrationGate";
@@ -78,23 +78,23 @@ const dashboardRoute = createRoute({
 const risksRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/risks",
-  component: lazyPage(() => import("@/features/risks/RiskRegisterPage"), "RiskRegisterPage"),
+  component: lazyPage(() => import("@/features/risks/presentation/pages/RiskRegisterPage"), "RiskRegisterPage"),
   validateSearch: (search) => riskSearchSchema.parse(search),
 });
 const riskDetailRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/risks/$riskId",
-  component: lazyPage(() => import("@/features/risks/RiskDetailPage"), "RiskDetailPage"),
+  component: lazyPage(() => import("@/features/risks/presentation/pages/RiskDetailPage"), "RiskDetailPage"),
 });
 const incidentsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/incidents",
-  component: lazyPage(() => import("@/features/incidents/IncidentsPage"), "IncidentsPage"),
+  component: lazyPage(() => import("@/features/incidents/presentation/pages/IncidentsPage"), "IncidentsPage"),
 });
 const complianceRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/compliance",
-  component: lazyPage(() => import("@/features/compliance/CompliancePage"), "CompliancePage"),
+  component: lazyPage(() => import("@/features/compliance/presentation/pages/CompliancePage"), "CompliancePage"),
 });
 const reportsRoute = createRoute({
   getParentRoute: () => appRoute,

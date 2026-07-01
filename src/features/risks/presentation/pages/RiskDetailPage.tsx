@@ -9,13 +9,13 @@ import {
   LIKELIHOOD_LABELS, IMPACT_LABELS, cellLevel,
 } from "@/lib/risk";
 import { fmtDate, idr, relativeDays, cn } from "@/lib/format";
-import { useRisk } from "./presentation/hooks/useRisks";
-import { useApproveTreatment, useRemoveKri } from "./presentation/hooks/useRiskMutations";
-import { TreatmentFormModal } from "./presentation/components/TreatmentFormModal";
-import { ReviewModal } from "./presentation/components/ReviewModal";
-import { KriFormModal } from "./presentation/components/KriFormModal";
+import { useRisk } from "../hooks/useRisks";
+import { useApproveTreatment, useRemoveKri } from "../hooks/useRiskMutations";
+import { TreatmentFormModal } from "../components/TreatmentFormModal";
+import { ReviewModal } from "../components/ReviewModal";
+import { KriFormModal } from "../components/KriFormModal";
 import { useSuggestTreatment } from "@/features/ai";
-import type { TreatmentInput } from "./validation/treatment.schema";
+import type { TreatmentInput } from "../../validation/treatment.schema";
 import type { Treatment, Kri } from "@/data/types";
 
 const STRATEGY_META: Record<string, { label: string; icon: string }> = {

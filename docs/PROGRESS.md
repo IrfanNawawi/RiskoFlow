@@ -12,7 +12,7 @@ PRD v1.6.1 status. Updated **2026-07-01**.
 | Layer | Status | Notes |
 |---|---|---|
 | Frontend stack (React 19/TS, TanStack, Tailwind v4, shadcn/ui) | ✅ | All deps installed |
-| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance` full; rest direct store access |
+| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance`, `ai` full; `dashboard`/`reports`/`audit`/`onboarding` direct store access |
 | Code splitting, CI gates (typecheck/lint/test/build) | ✅ | Via Vite + Vitest |
 | Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; auth+Edge Fn 🎯 |
 | AI (Edge Fn + Gemini) | ✅ | Risk + mitigation drafts; gate kuota 🎯 |
@@ -47,12 +47,14 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - Data layer: repo pattern ✅
 
 ### FR-ASSESS: Analisis & Penilaian (§3.4)
-- **Status:** 🟡 (heatmap ✅, re-assess history ⛔)
-- **Tasks:**
-  - [ ] Heatmap 5×5 render (recharts) + memoize 500-risk limit
-  - [ ] Assessment form (inherent + residual)
-  - [ ] Riwayat penilaian: shadow table assessments.history per risk
-  - [ ] Auto residual recalc saat treatment done (FR-TREAT-6)
+- **Status:** ✅ (inherent + residual ✅, heatmap ✅; riwayat penilaian 🎯)
+- **Implemented:**
+  - Severity/level generated column DB (`assessments`, D22) + `computeRiskLevel` kanonik (D4)
+  - Heatmap 5×5 (`components/Heatmap.tsx`) + MiniMatrix di RiskDetailPage
+  - Inherent + residual di RiskDetailPage; residual gate (≥1 treatment, FR-ASSESS-001 AC-003)
+- **Remaining 🎯:**
+  - [ ] Riwayat penilaian: shadow table `assessments.history` per risk
+  - [ ] Auto residual recalc saat treatment done (link FR-TREAT)
 
 ### FR-TREAT: Respons & Mitigasi (§3.5)
 - **Status:** ✅ (form + approval ✅, prompt residual ✅)
@@ -63,12 +65,14 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - Form via RHF + Zod
 
 ### FR-MON: Pemantauan Berkelanjutan (§3.6)
-- **Status:** 🟡 (review ✅, KRI ✅, cron jatuh tempo ⛔)
-- **Tasks:**
-  - [ ] Review form: next_review_date + status (FR-MON-2)
-  - [ ] KRI table CRUD (FR-MON-4): indicator name + threshold + actual
-  - [ ] Alert flag saat KRI > threshold (UI only; cron 🎯)
-  - [ ] Reopen risk saat review fail (FR-MON-5)
+- **Status:** ✅ (review ✅, KRI CRUD ✅; cron jatuh tempo 🎯)
+- **Implemented:**
+  - Review form (`ReviewModal`) + `review.schema` + trigger bump `next_review_date`
+  - KRI CRUD (`KriFormModal` + `kri.schema` + tabel `kris`): name + threshold + actual
+  - Alert flag saat KRI lewat ambang (UI)
+- **Remaining 🎯:**
+  - [ ] Cron harian scan `next_review_date` → enqueue notifikasi (FR-MON-001 AC-001)
+  - [ ] Reopen risk saat review fail
 
 ### FR-INC: Incident / Loss-Event Log (§3.7)
 - **Status:** ✅ (form ✅, link risk ✅, close gate ✅)
@@ -78,26 +82,26 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - CTA: create-risk-from-incident + auto-link (FR-INC-2)
   - Data layer: full domain/data/presentation
 
-### FR-AI: AI Assistant (§3.8)
+### FR-DASH: Dashboard & Reporting (§3.8)
+- **Status:** 🟡 (ekspor ✅, builder UI mock)
+- **Implemented:**
+  - Dashboard: risk count + heatmap + top mitigasi
+  - Ekspor Risk Register `.xlsx`/`.pdf` respecting filter (lazy chunk)
+- **Tasks:**
+  - [ ] Reports builder: UI select column + filter (mock only)
+  - [ ] Data layer migrate dari direct store access (dashboard/reports akses `@/data/store` langsung)
+
+### FR-AI: AI Assistant (§3.9)
 - **Status:** ✅ (risk + mitigation draft; assess/monitor 🎯)
 - **Implemented:**
-  - FR-AI-1: Generate risiko per dept (Edge Fn + Gemini)
+  - FR-AI-1: Generate risiko per dept (Edge Fn `supabase/functions/ai-suggest` + Gemini)
   - FR-AI-3: Saran mitigasi (draft → confirm required, D6)
   - Opt-out per user (FR-AI-7)
   - Fallback mock saat `.env` empty
 - **Remaining 🎯:**
-  - FR-AI-2: Saran penilaian
-  - FR-AI-4: Saran pemantauan
-
-### FR-COMP: Kepatuhan + Library Regulasi (§3.9)
-- **Status:** ✅ (CRUD ✅, laporan ✅, duplikasi ✅)
-- **Implemented:**
-  - Seed 3 industri (jasa/dagang/manufaktur)
-  - CRUD custom requirement (FR-COMP-1)
-  - Mapping m:n risk ↔ requirement (FR-COMP-2)
-  - Duplicate sistem → custom (FR-COMP-6)
-  - Gap report `.xlsx`/`.pdf` (FR-COMP-4)
-  - Data layer: full Clean Arch
+  - [ ] FR-AI-2: Saran penilaian
+  - [ ] FR-AI-4: Saran pemantauan
+  - [ ] Guard kuota harian + key di Vault (D10/D20)
 
 ### FR-NOTIF: Notifikasi (§3.10)
 - **Status:** ⛔ (🎯 Cron + Queues + email service)
@@ -106,14 +110,15 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - [ ] Email via Supabase Queues: digest harian
   - [ ] Cron: scan next_review_date, flag alert (daily 09:00)
 
-### FR-DASH: Dashboard & Reporting (§3.11)
-- **Status:** 🟡 (ekspor ✅, builder UI mock)
+### FR-COMP: Kepatuhan + Library Regulasi (§3.11)
+- **Status:** ✅ (CRUD ✅, laporan ✅, duplikasi ✅)
 - **Implemented:**
-  - Dashboard: risk count + heatmap + top mitigasi
-  - Ekspor Risk Register `.xlsx`/`.pdf` respecting filter (lazy chunk)
-- **Tasks:**
-  - [ ] Reports builder: UI select column + filter (mock only)
-  - [ ] Data layer migrate dari direct store access
+  - Seed 3 industri (jasa/dagang/manufaktur)
+  - CRUD custom requirement (FR-COMP-1)
+  - Mapping m:n risk ↔ requirement (FR-COMP-2)
+  - Duplicate sistem → custom (FR-COMP-6)
+  - Gap report `.xlsx`/`.pdf` (FR-COMP-4)
+  - Data layer: full Clean Arch
 
 ### NFR-04: Audit Trail
 - **Status:** 🟡 (viewer ✅, entries created; trigger 🎯)
