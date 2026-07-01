@@ -49,11 +49,11 @@ Muat file ini saat relevan dengan tugas. Semua guideline ada di `.claude/guideli
 | Arsitektur, layer, dependency rule, repository+DI, state | [.claude/guidelines/architecture.md](.claude/guidelines/architecture.md) |
 | Konvensi & guardrail (query-key, store, routing, multi-tenant, error, format) + checklist reviewer | [.claude/guidelines/conventions.md](.claude/guidelines/conventions.md) |
 | Konvensi penulisan kode (penamaan, TS strict, React, styling, keamanan) | [.claude/guidelines/coding-rules.md](.claude/guidelines/coding-rules.md) |
-| Struktur folder & cara bikin/ubah fitur | [.claude/guidelines/frontend-structure.md](.claude/guidelines/frontend-structure.md) |
+| Struktur folder, layer target (domain/data/presentation), library stack, library + RLS + performa + a11y + testing + offline + use-case timing | [.claude/guidelines/frontend-structure.md](.claude/guidelines/frontend-structure.md) |
 | Dokumentasi per fitur (template + contoh `risks`) | [docs/_TEMPLATE.md](docs/_TEMPLATE.md) · [docs/features/risks.md](docs/features/risks.md) |
-| Design system & token | [.claude/guidelines/design-system.md](.claude/guidelines/design-system.md) |
-| Menulis/ubah test | [.claude/guidelines/testing.md](.claude/guidelines/testing.md) |
-| Refactor fitur ke arsitektur target | [.claude/guidelines/refactoring-feature.md](.claude/guidelines/refactoring-feature.md) |
+| Sistem desain & token Tailwind `@theme` | [.claude/guidelines/design-system.md](.claude/guidelines/design-system.md) |
+| Menulis/ubah test (Vitest + RTL + Playwright) | [.claude/guidelines/testing.md](.claude/guidelines/testing.md) |
+| Refactor fitur ke arsitektur target (domain/data/presentation) | [.claude/guidelines/refactoring-feature.md](.claude/guidelines/refactoring-feature.md) |
 | Review kode | [.claude/guidelines/code-review.md](.claude/guidelines/code-review.md) |
 | Menulis dokumentasi | [.claude/guidelines/technical-writing.md](.claude/guidelines/technical-writing.md) |
 | Commit & push | [.claude/guidelines/git-commit.md](.claude/guidelines/git-commit.md) |
@@ -71,7 +71,7 @@ Muat file ini saat relevan dengan tugas. Semua guideline ada di `.claude/guideli
    aktif); UI/client state global → **Zustand** (selector + `useShallow`); form → **react-hook-form +
    Zod**; lokal → `useState`/`useReducer`.
 5. **Multi-tenant:** semua data di-scope **perusahaan aktif**; jangan bocorkan antar tenant. Cek peran di
-   UI (`can()`/`myRoles()`) **hanya UX** — otorisasi sebenarnya = RLS Postgres (target, NFR-02).
+   UI (`can()`/`myRoles()`) **hanya UX** — otorisasi sebenarnya = RLS Postgres (target, NFR-01).
 6. **Path alias tunggal `@/* → src/*`** (sinkron di `vite.config.ts` & `tsconfig.app.json`). Pakai
    `@/...`, bukan `../../../..`.
 7. **Design token, jangan hardcode** warna/spacing/font — pakai utility Tailwind `@theme` di
@@ -88,9 +88,8 @@ Muat file ini saat relevan dengan tugas. Semua guideline ada di `.claude/guideli
 
 ## Jangan lakukan
 
-- **Jangan tambah library baru tanpa konfirmasi user.** Cek `package.json` dulu; bila butuh lib target
-  yang belum terpasang (mis. `@supabase/supabase-js`), ingatkan user untuk meng-install. Pin versi
-  exact (`bun add --exact`) untuk lib baru.
+- **Jangan tambah library baru tanpa konfirmasi user.** Cek `package.json` dulu; bila memang butuh lib
+  baru, ingatkan user untuk meng-install. Pin versi exact (`bun add --exact`) untuk lib baru.
 - **Jangan langgar dependency rule** (Aturan inti #1) — `presentation` tak import `data`.
 - **Jangan fetch/side-effect di komponen.** Server state lewat TanStack Query hook; side-effect lain
   lewat action Zustand atau custom hook — bukan `useEffect` + fetch manual.
@@ -99,18 +98,86 @@ Muat file ini saat relevan dengan tugas. Semua guideline ada di `.claude/guideli
 
 ## Struktur
 
+### Saat ini (sederhana, dual-mode mock ↔ Supabase)
+
 ```
 src/
-  data/        # types.ts · seed.ts · store.ts (Zustand mock — pengganti repository Supabase)
-  lib/         # risk.ts (computeRiskLevel kanonik, D4) · format.ts (IDR integer, locale id-ID)
-  components/  # AppShell · Sidebar · Topbar · RiskBadge · Heatmap · NewRiskModal · ui.tsx (primitif)
-  features/    # risks (acuan: domain/data/presentation penuh) · onboarding · dashboard · incidents · compliance · reports · audit
-  main.tsx     # TanStack Router (code-based) — pertahankan path yang ada (/dashboard, /risks/$riskId, …)
-  index.css    # Tailwind v4 @theme — semua design token
+  data/
+    ├── types.ts           # Entity domain (camelCase; Risk, Assessment, dll)
+    ├── store.ts           # Zustand mock — fallback saat Supabase off
+    └── seed.ts            # Data dummy untuk dev
+  lib/
+    ├── risk.ts            # Pure: computeRiskLevel (D4 kanonik), severityScore, cellLevel
+    ├── format.ts          # IDR integer (format via Intl), date-fns locale ID
+    └── supabase.ts        # ⚠️ Client init; empty saat env kosong
+  components/
+    ├── ui.tsx             # Primitif shadcn foundation (Card, Button, Input, Dialog, etc)
+    ├── AppShell.tsx       # Layout root
+    ├── Sidebar.tsx        # Navigation
+    ├── Topbar.tsx         # Header + company switcher
+    ├── RiskBadge.tsx      # Label + skor + warna per level
+    └── Heatmap.tsx        # 5×5 chart severity-probability
+  features/
+    ├── risks/             # ⚠️ Target: full domain/data/presentation; kini: simple page
+    │   ├── page.tsx       # List + create + modal
+    │   ├── domain/        # ⚠️ Type + interface + pure function
+    │   ├── data/          # ⚠️ DTO, mapper, repository
+    │   └── presentation/  # ⚠️ Page, hooks (query factory), stores
+    ├── incidents/         # ⚠️ Target full; current: scope pending
+    ├── compliance/        # ⚠️ Target full
+    ├── dashboard/         # Simple; akses @/data/store langsung (migrate saat disentuh)
+    ├── reports/           # Simple; akses @/data/store langsung
+    ├── audit/             # Liat store saja
+    └── onboarding/        # Wizard setup perusahaan
+  i18n/
+    ├── id.json            # Bahasa Indonesia
+    └── en.json            # English
+  main.tsx                 # TanStack Router (code-based, pathless root + /app shell)
+  index.css                # Tailwind v4 @theme token (bg-primary, text-on-surface, gap-md, dll)
+  database.types.ts        # ⚠️ Generated: supabase gen types typescript > ini
 ```
 
-> Detail per layer fitur (`domain`/`data`/`presentation`): [frontend-structure.md](.claude/guidelines/frontend-structure.md).
-> Halaman yang sudah ada & pemetaannya ke PRD: lihat [README.md](README.md).
+### Target per fitur (saat complex atau Supabase live)
+
+Lihat [.claude/guidelines/frontend-structure.md](.claude/guidelines/frontend-structure.md) **§2** & **§14 Checklist**.
+
+**Fitur referensi (full struktur):** `risks`, `incidents`, `compliance`.  
+**Fitur simple (fallback):** `dashboard`, `reports` — akses `@/data/store` langsung; migrasikan saat disentuh.
+
+```
+src/features/<feature>/
+├── domain/
+│   ├── entities/            # Type + pure function (bukan class)
+│   ├── repositories/        # Interface: I<Name>Repository.ts
+│   ├── use-cases/           # ⚠️ DINAMIS — hanya saat ada business logic
+│   └── index.ts
+├── data/
+│   ├── datasources/         # <name>.dto.ts + <Name>RemoteDataSource.ts (Supabase)
+│   ├── mappers/             # <name>.mapper.ts (DTO → entity + Zod validasi)
+│   ├── repositories/        # <name>.repository.ts (implements I<Name>Repository)
+│   └── index.ts
+├── validation/              # Zod schema form RHF + error msg Bahasa Indonesia
+├── presentation/
+│   ├── pages/               # <Name>Page.tsx (thin; hook → component)
+│   ├── components/          # Feature component lokal
+│   ├── hooks/               # DI factory + useQuery hook + key factory
+│   ├── stores/              # Zustand (opsional; global state fitur)
+│   └── index.ts
+└── index.ts                 # Entry publik: export page
+```
+
+## Library Stack
+
+Lihat `.claude/guidelines/frontend-structure.md` **§0** untuk **terpasang sekarang** vs **target PRD**.
+
+**Ringkas yang sudah terpasang:** React 19, TanStack Router v1.170, TanStack Query v5.62, TanStack Table v8.21,
+react-hook-form v7.80, Zod v4.4, Zustand v5.0.2, Tailwind v4, shadcn/ui (foundation), date-fns v4, react-i18next v17,
+Sentry v10, `@supabase/supabase-js` v2.108 (PostgREST + RPC; **Auth ditunda**), Vitest, RTL, Playwright v1.61,
+Vite, TypeScript, ESLint (flat), Prettier.
+
+**Target PRD belum (infrastruktur, bukan lib npm):** Supabase **Auth**, Edge Functions, Cron, Vault.
+
+**Jangan import** target lib sebelum terpasang — ingatkan user, pin exact versi.
 
 ## Perintah
 
@@ -119,15 +186,41 @@ bun install
 bun run dev        # http://localhost:5173
 bun run build      # tsc -b && vite build
 bun run typecheck  # tsc -b --noEmit
+bun run lint       # eslint src/
+bun run format     # prettier --write src/
+bun run test       # vitest
+bun run test:watch
+bun run e2e        # playwright
 bun run preview
 ```
 
-**Gate sebelum selesai:** `bun run typecheck`, `bun run build`, `bun run lint`, **dan** `bun run test`
-harus hijau — laporkan apa adanya bila gagal. Vitest + ESLint (flat config) + Prettier sudah
-dikonfigurasi. **Playwright E2E & pgTAP RLS test** (NFR-12) masih target — belum ada spec.
+**Gate sebelum selesai:** `bun run typecheck`, `bun run build`, `bun run lint`, `bun run test` **WAJIB hijau**.
+Laporkan apa adanya bila gagal. **CI requirement** (NFR-12): lint + typecheck + test + migration dry-run semua go.
 
 ## Alat bantu (Claude Code)
 
-- Slash command **`/new-feature`** — scaffold fitur baru sesuai arsitektur target (`.claude/commands/new-feature.md`).
-- Subagent **`code-reviewer`** — review diff terhadap checklist (`.claude/agents/code-reviewer.md`).
-- Subagent **`technical-writer`** — menulis/merapikan dokumentasi (`.claude/agents/technical-writer.md`).
+- Slash command **`/new-feature`** — scaffold fitur baru sesuai arsitektur target.
+- Subagent **`code-reviewer`** — review diff terhadap checklist conventions & code-review.
+- Subagent **`technical-writer`** — menulis/merapikan dokumentasi (docs/features/).
+
+---
+
+## 📋 Ringkas Cepat (saat buntu)
+
+**Feature baru?** → Lihat [frontend-structure.md §14 Checklist](.claude/guidelines/frontend-structure.md). Ikuti template _TEMPLATE.md.
+
+**Fix bug?** → Dependency rule § + Entity pasti `type` + pure fn + DTO not leak.
+
+**Supabase on/off?** → Check `.env` VITE_SUPABASE_*; auto-fallback ke mock. RLS baru? Test pakai pgTAP (target).
+
+**Multi-tenant?** → Scope data `company_id`; cek peran UI hanya UX; RLS DB enforce (NFR-01).
+
+**Design token?** → Jangan hardcode hex. Pakai `@theme` di `index.css` + Tailwind utility. Token di [design-system.md](.claude/guidelines/design-system.md).
+
+**i18n + format?** → `t("key")` untuk string; date-fns locale `id-ID`; Rupiah integer via `idr()` formatter.
+
+**Error/loading?** → TanStack Query auto-handle. Sentry via `captureException`. Offline badge saat network down (NFR-14).
+
+**Test?** → Vitest + RTL unit/integration; Playwright E2E critical path. DI mock repository via hook injection.
+
+**Dokumentasi?** → `.md` tetap sinkron aturan inti #11. PRD source of truth; PROGRESS.md status fitur.
