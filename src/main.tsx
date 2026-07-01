@@ -11,11 +11,13 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 import { AppShell } from "@/components/AppShell";
 import { riskSearchSchema } from "@/features/risks/validation/search.schema";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { SNAPSHOT_KEY } from "@/data/remote";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { RemoteHydrationGate } from "@/data/RemoteHydrationGate";
 
 // Tiap mutasi sukses → re-hidrasi store dari Supabase agar halaman berbasis store
@@ -134,6 +136,8 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <RemoteHydrationGate>
         <RouterProvider router={router} />
+        <Analytics />
+        <SpeedInsights />
       </RemoteHydrationGate>
     </QueryClientProvider>
   </StrictMode>,
