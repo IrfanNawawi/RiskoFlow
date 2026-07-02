@@ -90,21 +90,25 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - Data layer: full domain/data/presentation
 
 ### FR-DASH: Dashboard & Reporting (§3.8)
-- **Status:** 🟡 (ekspor ✅, builder pilih kolom ✅ (filter nilai 🎯); data layer ✅)
+- **Status:** 🟡 (ekspor ✅, builder pilih kolom + filter ✅ (simpan preset 🎯); data layer ✅)
 - **Structure:** `dashboard` & `reports` full domain/data/presentation (mirror `risks`)
 - **Implemented:**
   - Dashboard: risk count + heatmap + top mitigasi
   - Ekspor Risk Register `.xlsx`/`.pdf` respecting filter (lazy chunk)
   - **Custom Report Builder fungsional (FR-DASH-3):** katalog kolom `reports/domain/entities/columns`
-    (`REPORT_COLUMNS` + `projectRows`/`selectedColumnKeys`, 7 unit test); drag/klik kolom → ekspor XLSX/PDF
+    (`REPORT_COLUMNS` + `projectRows`/`selectedColumnKeys`); drag/klik kolom → ekspor XLSX/PDF
     hanya kolom terpilih (base Kode+Judul selalu ikut). Template cepat tetap seluruh kolom.
+  - **Filter nilai** `reports/domain/entities/filter` (`applyRiskFilter` by level/kategori/status, AND antar-dimensi;
+    level pakai penilaian aktif) — chip toggle + hitung live "N dari M" + Reset; ekspor custom menghormati filter.
+    13 unit test domain (kolom + filter).
   - **Data layer Clean Arch:** metrik dashboard = pure function `domain/entities/metrics` (11 unit test);
     `DashboardRepository`/`ReportsRepository` meng-compose `IRiskRepository`/`IIncidentRepository`
     (reuse SELECT/mapper) + `*ReferenceDataSource` (dept/user/company) via DI hook + TanStack Query
     (`useDashboardOverview`/`useReportRegister`, key ter-scope tenant). Page tak lagi akses `@/data/store`.
 - **Tasks:**
   - [x] Reports builder: pilih kolom → ekspor terproyeksi (mock)
-  - [ ] Reports builder: filter nilai (mis. kategori/periode/status) + simpan preset laporan
+  - [x] Reports builder: filter nilai (level/kategori/status) diterapkan ke ekspor
+  - [ ] Reports builder: simpan preset laporan + filter periode/tanggal
 
 ### FR-AI: AI Assistant (§3.9)
 - **Status:** ✅ (risk + assess + mitigation + monitor draft; kuota 🎯)

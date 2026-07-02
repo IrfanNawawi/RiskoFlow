@@ -8,3 +8,9 @@ export {
   projectRows,
   type ReportColumn,
 } from "./entities/columns";
+export {
+  applyRiskFilter,
+  isRiskFilterActive,
+  EMPTY_RISK_FILTER,
+  type RiskFilter,
+} from "./entities/filter";
