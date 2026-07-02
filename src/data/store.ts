@@ -214,6 +214,17 @@ const INDUSTRY_SEED: Record<IndustryType, Array<{ regulationName: string; descri
   ],
 };
 
+// Memo referensial untuk activeMembers(): array anggota di-derive dengan meng-join
+// membership+user, sehingga tiap pemanggilan menghasilkan objek baru. Tanpa cache,
+// `useShallow` (hanya membandingkan 1 level) selalu menilai "berubah" → infinite loop.
+// Karena Zustand mengganti array secara immutable, identitas referensi valid sebagai key.
+let activeMembersCache: {
+  memberships: unknown;
+  users: unknown;
+  activeCompanyId: string;
+  value: Array<{ membershipId: string; user: User; roles: MembershipRole[] }>;
+} | null = null;
+
 export const useStore = create<State>((set, get) => ({
   users: seed.users,
   companies: [seed.company, seed.company2],
@@ -258,10 +269,22 @@ export const useStore = create<State>((set, get) => ({
   activeDepartments: () => get().departments.filter((d) => d.companyId === get().activeCompanyId && !d.archivedAt),
   activeMembers: () => {
     const { memberships, activeCompanyId, users } = get();
-    return memberships
+    // Kembalikan referensi tercache selama input (by-reference) tak berubah, agar
+    // useShallow tidak melihat objek baru tiap render → cegah infinite loop.
+    if (
+      activeMembersCache &&
+      activeMembersCache.memberships === memberships &&
+      activeMembersCache.users === users &&
+      activeMembersCache.activeCompanyId === activeCompanyId
+    ) {
+      return activeMembersCache.value;
+    }
+    const value = memberships
       .filter((m) => m.companyId === activeCompanyId)
       .map((m) => ({ membershipId: m.id, user: users.find((u) => u.id === m.userId)!, roles: m.roles }))
       .filter((x) => x.user); // buang membership tanpa user (data tak konsisten)
+    activeMembersCache = { memberships, users, activeCompanyId, value };
+    return value;
   },
   activeRisks: () => get().risks.filter((r) => r.companyId === get().activeCompanyId && !r.deletedAt),
   activeIncidents: () => get().incidents.filter((i) => i.companyId === get().activeCompanyId),
