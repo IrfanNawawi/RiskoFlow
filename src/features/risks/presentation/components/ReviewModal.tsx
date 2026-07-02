@@ -8,6 +8,8 @@ import { cn } from "@/lib/format";
 import { computeRiskLevel, severityScore, STATUS_META, LIKELIHOOD_LABELS, IMPACT_LABELS } from "@/lib/risk";
 import { reviewSchema, type ReviewInput } from "@/features/risks/validation/review.schema";
 import { useRecordReview } from "@/features/risks/presentation/hooks/useRiskMutations";
+import { useSuggestAssessment, useSuggestMonitoring } from "@/features/ai";
+import { useStore } from "@/data/store";
 import type { Risk, RiskStatus } from "@/data/types";
 
 const FREQ_OPTIONS: { value: ReviewInput["reviewFrequency"]; label: string }[] = [
@@ -22,14 +24,22 @@ export function ReviewModal({ open, onClose, risk }: { open: boolean; onClose: (
   const active = risk.residual ?? risk.inherent;
   const hasTreatments = risk.treatments.length > 0;
 
+  const aiEnabled = useStore((s) => s.activeCompany().aiEnabled);
+  const industryType = useStore((s) => s.activeCompany().industryType);
+  const suggestAssessment = useSuggestAssessment();
+  const suggestMonitoring = useSuggestMonitoring();
+
   const {
     register,
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ReviewInput>({ resolver: zodResolver(reviewSchema) });
 
+  const resetAssessmentAi = suggestAssessment.reset;
+  const resetMonitoringAi = suggestMonitoring.reset;
   useEffect(() => {
     if (!open) return;
     reset({
@@ -39,6 +49,8 @@ export function ReviewModal({ open, onClose, risk }: { open: boolean; onClose: (
       reviewFrequency: risk.reviewFrequency,
       note: "",
     });
+    resetAssessmentAi();
+    resetMonitoringAi();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -47,7 +59,7 @@ export function ReviewModal({ open, onClose, risk }: { open: boolean; onClose: (
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose, reset, active.likelihood, active.impact, risk.status, risk.reviewFrequency]);
+  }, [open, onClose, reset, resetAssessmentAi, resetMonitoringAi, active.likelihood, active.impact, risk.status, risk.reviewFrequency]);
 
   if (!open) return null;
 
@@ -59,6 +71,20 @@ export function ReviewModal({ open, onClose, risk }: { open: boolean; onClose: (
   const onValid = async (data: ReviewInput) => {
     await recordReview.mutateAsync({ riskId: risk.id, input: data });
     onClose();
+  };
+
+  // FR-AI-2 + FR-AI-4: minta AI mengusulkan penilaian (likelihood/impact) & pemantauan
+  // (frekuensi review), lalu prefill form. Tetap diedit & dikonfirmasi manusia sebelum simpan (D6).
+  const aiPending = suggestAssessment.isPending || suggestMonitoring.isPending;
+  const aiError = suggestAssessment.error ?? suggestMonitoring.error;
+  const applyAiSuggestions = async () => {
+    const [assessment, monitoring] = await Promise.all([
+      suggestAssessment.mutateAsync({ riskTitle: risk.title, category: risk.category, source: risk.source, industryType }),
+      suggestMonitoring.mutateAsync({ riskTitle: risk.title, category: risk.category, level: active.level }),
+    ]);
+    setValue("likelihood", assessment.likelihood, { shouldValidate: true });
+    setValue("impact", assessment.impact, { shouldValidate: true });
+    setValue("reviewFrequency", monitoring.reviewFrequency, { shouldValidate: true });
   };
 
   const field = "w-full rounded-[14px] border border-border-hairline bg-surface px-4 py-2.5 text-[14px] focus:border-primary";
@@ -89,6 +115,43 @@ export function ReviewModal({ open, onClose, risk }: { open: boolean; onClose: (
         </div>
 
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+          {aiEnabled && (
+            <div className="rounded-[16px] border border-primary-fixed bg-surface p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2 text-primary">
+                  <Icon name="auto_awesome" size={18} fill />
+                  <div>
+                    <p className="font-display text-[14px] font-bold text-on-surface">Usulan AI</p>
+                    <p className="text-[12px] text-text-secondary">Prefill penilaian & frekuensi review — tetap Anda konfirmasi (FR-AI-2/4).</p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  icon="auto_awesome"
+                  onClick={() => void applyAiSuggestions().catch(() => {})}
+                  disabled={aiPending}
+                >
+                  {aiPending ? "Menganalisis…" : "Sarankan"}
+                </Button>
+              </div>
+              {suggestMonitoring.data && (
+                <p className="mt-2 flex items-start gap-1.5 rounded-[12px] bg-surface-muted px-3 py-2 text-[12px] text-on-surface-variant">
+                  <Icon name="lightbulb" size={14} className="mt-0.5 shrink-0 text-primary" />
+                  <span>
+                    Kandidat KRI: <b>{suggestMonitoring.data.indicatorName}</b> (ambang {suggestMonitoring.data.threshold}). {suggestMonitoring.data.rationale}
+                  </span>
+                </p>
+              )}
+              {aiError && (
+                <p className="mt-2 flex items-center gap-1.5 rounded-[12px] bg-error-container px-3 py-2 text-[12px] text-on-error-container">
+                  <Icon name="error" size={14} />
+                  {aiError instanceof Error ? aiError.message : "Gagal menghubungi AI."} Coba lagi.
+                </p>
+              )}
+            </div>
+          )}
           <div className="rounded-[16px] border border-border-hairline bg-surface-muted p-4">
             <div className="mb-3 flex items-center justify-between">
               <p className="font-display text-[15px] font-semibold">Penilaian {hasTreatments ? "residual" : "inherent"}</p>

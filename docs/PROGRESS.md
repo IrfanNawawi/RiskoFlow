@@ -96,15 +96,16 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - [ ] Data layer migrate dari direct store access (dashboard/reports akses `@/data/store` langsung)
 
 ### FR-AI: AI Assistant (§3.9)
-- **Status:** ✅ (risk + mitigation draft; assess/monitor 🎯)
+- **Status:** ✅ (risk + assess + mitigation + monitor draft; kuota 🎯)
 - **Implemented:**
   - FR-AI-1: Generate risiko per dept (Edge Fn `supabase/functions/ai-suggest` + Gemini)
+  - FR-AI-2: Saran penilaian (likelihood/impact + rationale) — prefill di `ReviewModal`, draft → confirm (D6)
   - FR-AI-3: Saran mitigasi (draft → confirm required, D6)
+  - FR-AI-4: Saran pemantauan (frekuensi review + kandidat KRI) — prefill di `ReviewModal`
+  - Semua tahap: mock + Edge (action `assessment`/`monitoring`) + Browser-Gemini, `responseSchema` + Zod
   - Opt-out per user (FR-AI-7)
   - Fallback mock saat `.env` empty
 - **Remaining 🎯:**
-  - [ ] FR-AI-2: Saran penilaian
-  - [ ] FR-AI-4: Saran pemantauan
   - [ ] Guard kuota harian + key di Vault (D10/D20)
 
 ### FR-NOTIF: Notifikasi (§3.10)
@@ -161,7 +162,7 @@ PRD v1.6.1 status. Updated **2026-07-01**.
 
 **Tier 2 (post-core):**
 4. FR-NOTIF: Queues + email template (Sendgrid / Resend integration via Vault)
-5. FR-AI-2/4: Extend Edge Fn for assessment + monitoring suggestions
+5. FR-AI: guard kuota harian + key di Vault (D10/D20) — saran assessment/monitoring ✅ done
 6. Dashboard data layer: migrate direct store → repository
 
 **Tier 3 (polish):**

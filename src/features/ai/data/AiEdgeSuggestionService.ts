@@ -1,12 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  AiAssessmentSuggestion,
+  AiMonitoringSuggestion,
   AiRiskSuggestion,
+  AiSuggestAssessmentInput,
+  AiSuggestMonitoringInput,
   AiSuggestRisksInput,
   AiSuggestTreatmentInput,
   AiTreatmentSuggestion,
   IAiSuggestionService,
 } from "@/features/ai/domain";
-import { risksResponseSchema, treatmentResponseSchema } from "./aiSchemas";
+import {
+  assessmentResponseSchema,
+  monitoringResponseSchema,
+  risksResponseSchema,
+  treatmentResponseSchema,
+} from "./aiSchemas";
 
 /** Error layanan AI agar UI bisa membedakannya & menampilkan pesan yang jelas (tanpa fallback). */
 export class AiServiceError extends Error {
@@ -46,6 +55,26 @@ export class AiEdgeSuggestionService implements IAiSuggestionService {
     });
     if (error) throw new AiServiceError("Gagal menghubungi layanan AI (Edge Function).", error);
     const parsed = treatmentResponseSchema.safeParse(data);
+    if (!parsed.success) throw new AiServiceError("Respons AI tidak valid.", parsed.error);
+    return parsed.data.suggestion;
+  }
+
+  async suggestAssessment(input: AiSuggestAssessmentInput): Promise<AiAssessmentSuggestion> {
+    const { data, error } = await this.sb.functions.invoke("ai-suggest", {
+      body: { action: "assessment", payload: input },
+    });
+    if (error) throw new AiServiceError("Gagal menghubungi layanan AI (Edge Function).", error);
+    const parsed = assessmentResponseSchema.safeParse(data);
+    if (!parsed.success) throw new AiServiceError("Respons AI tidak valid.", parsed.error);
+    return parsed.data.suggestion;
+  }
+
+  async suggestMonitoring(input: AiSuggestMonitoringInput): Promise<AiMonitoringSuggestion> {
+    const { data, error } = await this.sb.functions.invoke("ai-suggest", {
+      body: { action: "monitoring", payload: input },
+    });
+    if (error) throw new AiServiceError("Gagal menghubungi layanan AI (Edge Function).", error);
+    const parsed = monitoringResponseSchema.safeParse(data);
     if (!parsed.success) throw new AiServiceError("Respons AI tidak valid.", parsed.error);
     return parsed.data.suggestion;
   }
