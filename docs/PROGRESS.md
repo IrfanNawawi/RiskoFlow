@@ -33,7 +33,15 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - [ ] Phone format ID via Zod + `format.ts` (butuh kolom `phone` + param RPC → 🎯 backend)
 
 ### FR-ORG: Departemen, User & RBAC (§3.2)
-- **Status:** ✅ (dept CRUD ✅, anggota & peran ✅, switcher ✅; RLS/Auth 🎯)
+- **Status:** ✅ (dept CRUD ✅, anggota & peran ✅, switcher ✅, Auth frontend ✅; RLS 🎯)
+- **Auth frontend (dual-mode, `src/features/auth/`):**
+  - `AuthGate` (init sesi saat boot) + `/login` (`LoginPage`) + route guard di `AppShell`/onboarding
+  - Flag `isAuthEnabled` (`VITE_SUPABASE_AUTH`) **terpisah** dari `isSupabaseConfigured`: DB/PostgREST
+    bisa aktif sementara Auth ditunda. `true` → login email/password Supabase; default → **login demo**
+    (pilih user, dipersist localStorage) agar app tetap dipakai. Logout di sidebar → `/login`
+  - `store.setCurrentUser` menjaga perusahaan aktif tetap milik user sesi; 5 unit test `authStore`
+  - ⚠️ target `supabase/migrations/0002_auth_rls.sql`: policy permissive → berbasis `auth.uid()` +
+    keanggotaan (helper SECURITY DEFINER `is_company_member`/`has_company_role`) — belum bisa dijalankan di sini
 - **Structure:** `src/features/org/` (store-direct, seperti dashboard/reports) — page + validation + components
 - **Implemented:**
   - Halaman Organisasi (`/organisasi`): departemen + anggota & peran
@@ -178,8 +186,9 @@ PRD v1.6.1 status. Updated **2026-07-02**.
 ## Next Steps (Prioritized)
 
 **Tier 1 (unblock main features):**
-1. Auth Supabase: login/logout + invite flow + swap `currentUserId` → `auth.uid()`
-2. Tighten RLS: change permissive → definer; test cross-company deny (pgTAP)
+1. Auth: **frontend selesai** (login demo/Supabase, guard, logout, sesi) ✅ — sisa 🎯: aktifkan `VITE_SUPABASE_AUTH`,
+   set user Auth = `users.id`, swap scoping ke `auth.uid()`, invite flow via email
+2. Tighten RLS: migrasi `0002_auth_rls.sql` ditulis (permissive → `auth.uid()` + membership) — sisa 🎯: apply + pgTAP cross-company deny
 3. FR-MON cron: daily scan next_review_date, flag stale (Cron job)
 
 **Tier 2 (post-core):**

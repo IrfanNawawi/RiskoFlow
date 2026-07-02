@@ -22,7 +22,7 @@ fondasi shadcn); yang masih ramping hanyalah **backend** karena tak bisa di-prov
 
 | Aspek | Sekarang | Target PRD |
 |---|---|---|
-| Data/backend | **Dual-mode**: Supabase bila env terisi (`supabase/migrations` + `src/lib/supabase.ts`, RLS permissive, **auth ditunda**), selain itu fallback **mock in-memory** (`src/data/store.ts` + `seed.ts`) | Supabase (Postgres + RLS + **Auth** + Edge Functions) |
+| Data/backend | **Dual-mode**: Supabase bila env terisi (`supabase/migrations` + `src/lib/supabase.ts`, RLS permissive, **Auth backend ditunda** — frontend auth ada, opt-in `VITE_SUPABASE_AUTH`), selain itu fallback **mock in-memory** (`src/data/store.ts` + `seed.ts`) | Supabase (Postgres + RLS + **Auth** + Edge Functions) |
 | Router | **TanStack Router** (code-based di `main.tsx`, typed search params via Zod) | ✅ tercapai |
 | Package manager | **bun** (`bun.lockb`) | ✅ tercapai |
 | Form/validasi | **react-hook-form + Zod** (schema di `features/*/validation/`) | ✅ tercapai |
@@ -31,8 +31,10 @@ fondasi shadcn); yang masih ramping hanyalah **backend** karena tak bisa di-prov
 Saat membangun fitur: ikuti **layering & konvensi target**, tandai jelas mana yang **sudah ada**
 vs **⚠️ target**. Invariant kritis kini **DB-enforced di Supabase** (generated column severity/level,
 gate ACCEPT & incident-close, trigger audit & auto-advance review) **dan** tetap ditiru di mock store
-sebagai fallback. Yang masih **⚠️ target**: **Auth** (sementara pakai `currentUserId` mock; RLS masih
-permissive) dan Edge Functions/Cron/Vault. Jangan menambah dependency baru tanpa konfirmasi user.
+sebagai fallback. **Auth frontend sudah ada** (`src/features/auth/`: login demo/Supabase, `AuthGate`,
+guard, logout, sesi) — namun **Auth backend Supabase** masih **⚠️ target** (aktif via `VITE_SUPABASE_AUTH`;
+default login demo, RLS masih permissive — migrasi `auth.uid()` ditulis di `0002_auth_rls.sql` tapi belum
+di-apply). Sisanya **⚠️ target**: Edge Functions/Cron/Vault. Jangan menambah dependency baru tanpa konfirmasi user.
 
 **Mengaktifkan Supabase:** salin `.env.example` → `.env`, isi `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`;
 `supabase db push` (terapkan `supabase/migrations/`) + `supabase db reset` (seed). Tanpa env, app

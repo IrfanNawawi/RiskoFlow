@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useAuthStore } from "@/features/auth";
 import { Icon } from "./ui";
 import { cn } from "@/lib/format";
 
@@ -13,6 +14,15 @@ const NAV = [
 ] as const;
 
 export function Sidebar({ onNewRisk, open, onClose }: { onNewRisk: () => void; open: boolean; onClose: () => void }) {
+  const navigate = useNavigate();
+  const signOut = useAuthStore((s) => s.signOut);
+
+  const onLogout = async () => {
+    onClose();
+    await signOut();
+    navigate({ to: "/login" });
+  };
+
   return (
     <aside
       className={cn(
@@ -69,7 +79,7 @@ export function Sidebar({ onNewRisk, open, onClose }: { onNewRisk: () => void; o
         <button className="flex items-center gap-3 rounded-full px-4 py-2.5 text-[14px] font-medium text-on-surface-variant hover:bg-background-mint hover:text-primary">
           <Icon name="help" size={20} /> Help
         </button>
-        <button className="flex items-center gap-3 rounded-full px-4 py-2.5 text-[14px] font-medium text-on-surface-variant hover:bg-background-mint hover:text-primary">
+        <button onClick={onLogout} className="flex items-center gap-3 rounded-full px-4 py-2.5 text-[14px] font-medium text-on-surface-variant hover:bg-background-mint hover:text-primary">
           <Icon name="logout" size={20} /> Logout
         </button>
       </div>

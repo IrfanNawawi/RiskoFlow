@@ -14,6 +14,7 @@ import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react
 import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 import { AppShell } from "@/components/AppShell";
+import { AuthGate } from "@/features/auth";
 import { riskSearchSchema } from "@/features/risks/validation/search.schema";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { SNAPSHOT_KEY } from "@/data/remote";
@@ -57,6 +58,12 @@ const indexRoute = createRoute({
   beforeLoad: () => {
     throw redirect({ to: "/dashboard" });
   },
+});
+
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: lazyPage(() => import("@/features/auth/LoginPage"), "LoginPage"),
 });
 
 const onboardingRoute = createRoute({
@@ -116,6 +123,7 @@ const orgRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  loginRoute,
   onboardingRoute,
   appRoute.addChildren([
     dashboardRoute,
@@ -141,7 +149,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RemoteHydrationGate>
-        <RouterProvider router={router} />
+        <AuthGate>
+          <RouterProvider router={router} />
+        </AuthGate>
         <Analytics />
         <SpeedInsights />
       </RemoteHydrationGate>
