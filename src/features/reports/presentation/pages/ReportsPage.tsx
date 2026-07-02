@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { useStore } from "@/data/store";
-import { useRisks } from "@/features/risks";
 import { Card, Icon, Button } from "@/components/ui";
 import { cn } from "@/lib/format";
 import { buildRiskExportRows, exportRowsToXlsx, exportRowsToPdf, todayStamp } from "@/lib/export";
+import { reportableRisks } from "@/features/reports/domain";
+import { useReportRegister } from "../hooks/useReportRegister";
 
 const TEMPLATES = [
   { id: "profile", title: "Profil Risiko Korporat", desc: "Ringkasan komprehensif eksposur risiko utama, status mitigasi, dan indikator KRI di tingkat enterprise.", icon: "donut_large", formats: ["PDF", "XLS"], big: true },
@@ -18,22 +18,20 @@ export function ReportsPage() {
   const [dropped, setDropped] = useState<string[]>(["Kategori Risiko", "Departemen"]);
   const [dragOver, setDragOver] = useState(false);
 
-  const { data: risks = [] } = useRisks();
-  const deptById = useStore((s) => s.deptById);
-  const userById = useStore((s) => s.userById);
-
+  const { data } = useReportRegister();
   const available = PARAMS.filter((p) => !dropped.includes(p));
 
-  // Sumber data ekspor: risiko aktif yang sudah dikonfirmasi (abaikan draft AI).
-  const rows = useMemo(
-    () =>
-      buildRiskExportRows(
-        risks.filter((r) => !r.aiSuggested),
-        (id) => deptById(id)?.name ?? "—",
-        (id) => userById(id)?.name ?? "—",
-      ),
-    [risks, deptById, userById],
-  );
+  // Sumber data ekspor: risiko aktif terkonfirmasi (abaikan draft AI), nama di-resolve dari referensi.
+  const rows = useMemo(() => {
+    if (!data) return [];
+    const deptName = new Map(data.departments.map((d) => [d.id, d.name]));
+    const userName = new Map(data.users.map((u) => [u.id, u.name]));
+    return buildRiskExportRows(
+      reportableRisks(data.risks),
+      (id) => deptName.get(id) ?? "—",
+      (id) => userName.get(id) ?? "—",
+    );
+  }, [data]);
 
   const exportRegister = (format: "PDF" | "XLS", title: string) => {
     const base = `riskoflow-${title.toLowerCase().replace(/\s+/g, "-")}-${todayStamp()}`;

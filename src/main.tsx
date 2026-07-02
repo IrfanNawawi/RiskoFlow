@@ -75,7 +75,7 @@ const appRoute = createRoute({
 const dashboardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/dashboard",
-  component: lazyPage(() => import("@/features/dashboard/DashboardPage"), "DashboardPage"),
+  component: lazyPage(() => import("@/features/dashboard/presentation/pages/DashboardPage"), "DashboardPage"),
 });
 const risksRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -101,7 +101,7 @@ const complianceRoute = createRoute({
 const reportsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/reports",
-  component: lazyPage(() => import("@/features/reports/ReportsPage"), "ReportsPage"),
+  component: lazyPage(() => import("@/features/reports/presentation/pages/ReportsPage"), "ReportsPage"),
 });
 const auditRoute = createRoute({
   getParentRoute: () => appRoute,

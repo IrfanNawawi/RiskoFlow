@@ -12,7 +12,7 @@ PRD v1.6.1 status. Updated **2026-07-02**.
 | Layer | Status | Notes |
 |---|---|---|
 | Frontend stack (React 19/TS, TanStack, Tailwind v4, shadcn/ui) | ✅ | All deps installed |
-| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance`, `ai` full; `dashboard`/`reports`/`audit`/`onboarding`/`org` direct store access |
+| Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance`, `ai`, `dashboard`, `reports` full; `audit`/`onboarding`/`org` direct store access |
 | Code splitting, CI gates (typecheck/lint/test/build) | ✅ | Via Vite + Vitest |
 | Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; auth+Edge Fn 🎯 |
 | AI (Edge Fn + Gemini) | ✅ | Risk + mitigation drafts; gate kuota 🎯 |
@@ -87,13 +87,17 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - Data layer: full domain/data/presentation
 
 ### FR-DASH: Dashboard & Reporting (§3.8)
-- **Status:** 🟡 (ekspor ✅, builder UI mock)
+- **Status:** 🟡 (ekspor ✅, builder UI mock; data layer ✅)
+- **Structure:** `dashboard` & `reports` full domain/data/presentation (mirror `risks`)
 - **Implemented:**
   - Dashboard: risk count + heatmap + top mitigasi
   - Ekspor Risk Register `.xlsx`/`.pdf` respecting filter (lazy chunk)
+  - **Data layer Clean Arch:** metrik dashboard = pure function `domain/entities/metrics` (11 unit test);
+    `DashboardRepository`/`ReportsRepository` meng-compose `IRiskRepository`/`IIncidentRepository`
+    (reuse SELECT/mapper) + `*ReferenceDataSource` (dept/user/company) via DI hook + TanStack Query
+    (`useDashboardOverview`/`useReportRegister`, key ter-scope tenant). Page tak lagi akses `@/data/store`.
 - **Tasks:**
   - [ ] Reports builder: UI select column + filter (mock only)
-  - [ ] Data layer migrate dari direct store access (dashboard/reports akses `@/data/store` langsung)
 
 ### FR-AI: AI Assistant (§3.9)
 - **Status:** ✅ (risk + assess + mitigation + monitor draft; kuota 🎯)
@@ -169,7 +173,7 @@ PRD v1.6.1 status. Updated **2026-07-02**.
 **Tier 2 (post-core):**
 4. FR-NOTIF: Queues + email template (Sendgrid / Resend integration via Vault)
 5. FR-AI: guard kuota harian + key di Vault (D10/D20) — saran assessment/monitoring ✅ done
-6. Dashboard data layer: migrate direct store → repository
+6. ~~Dashboard/reports data layer: migrate direct store → repository~~ ✅ done (Clean Arch + TanStack Query)
 
 **Tier 3 (polish):**
 7. E2E tests (Playwright): auth → register → assess → treat → monitor
