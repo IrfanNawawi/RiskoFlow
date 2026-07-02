@@ -2217,8 +2217,6 @@ Feature-sliced Clean Architecture (domain/data/presentation); dependency rule `p
 | **Inherent vs Residual** | Risiko sebelum vs setelah penerapan kontrol/mitigasi |
 | **Risk treatment** | Strategi penanganan: avoid/reduce/transfer/accept (D5) |
 | **Loss event / Near-miss** | Kejadian risiko nyata (dengan/tanpa kerugian) di incident log (D13) |
-| **KRI** | Key Risk Indicator — indikator terukur dengan threshold (FR-MON) |
-| **RLS** | Row Level Security — isolasi data antar tenant (D9) |
 | **SECURITY DEFINER** | Fungsi berjalan dengan privilege pembuatnya; helper RLS & RPC provisioning (D25) |
 | **RPC provisioning** | `create_company_with_admin` — onboarding atomik (D25/D27) |
 | **Multi-role** | Satu user >1 peran dalam satu perusahaan (D27) |
@@ -2228,9 +2226,55 @@ Feature-sliced Clean Architecture (domain/data/presentation); dependency rule `p
 | **Supabase Queues** | Message queue durable (pgmq) untuk email tahan banting (D19) |
 | **Vault** | Penyimpanan secret terenkripsi Supabase (D20) |
 | **Multi-membership** | Satu user di beberapa perusahaan via company switcher (D9) |
-| **RBAC** | Role-Based Access Control — per peran, per perusahaan, multi-role (D7/D27) |
-| **GCG** | Good Corporate Governance |
 | **Soft delete** | Penghapusan dengan menandai `deleted_at` (D8) |
+
+### 21.1 Legend — Skema ID & Singkatan
+
+Semua item dalam dokumen ini diberi **ID berprefiks** agar dapat ditelusuri (*traceability*, rule #11). Pahami prefiksnya sebelum membaca §4–§20.
+
+**Prefiks ID (tipe item):**
+
+| Prefiks | Kepanjangan | Arti | Contoh | Dirujuk sebagai |
+|---|---|---|---|---|
+| **FR** | Functional Requirement | *Apa* yang harus bisa dilakukan sistem (fitur). Detail di §4 | `FR-RISK-001` | `FR-<MODUL>-<NNN>` |
+| **AC** | Acceptance Criteria | Kriteria terukur agar sebuah FR dianggap selesai & benar. Format **Given–When–Then**. Wajib ≥3 per FR | `AC-001` | `AC-<NNN>` |
+| **TC** | Test Case | Kasus uji nyata yang membuktikan AC terpenuhi. **Opsional** di PRD (detail hidup di QA wiki; di sini hanya placeholder ID) | `TC-RISK-001..004` | `TC-<MODUL>-<NNN>` |
+| **NFR** | Non-Functional Requirement | Kebutuhan kualitas: performa, keamanan, a11y, dsb. Detail di §5 | `NFR-09` | `NFR-<NN>` |
+| **D** | Decision | Keputusan mengikat seluruh dokumen. Sumber kebenaran di §20 Decision Log | `D22` | `D<N>` |
+| **G** | Goal | Tujuan produk yang terukur. Detail di §1.2 | `G1` | `G<N>` |
+| **OQ** | Open Question | Pertanyaan tata kelola pra-produksi yang belum terjawab (non-blocker MVP). Detail di §17 | `OQ-001` | `OQ-<NNN>` |
+
+**Rantai penelusuran (traceability chain):** `FR → AC → TC` — setiap **fitur** (FR) punya **kriteria lulus** (AC) dan **bukti uji** (TC). Matriksnya di [§4.15](#415-traceability-matrix-fr--ac--tc).
+
+**Kode modul (dipakai di `FR-<MODUL>-*` & `TC-<MODUL>-*`):**
+
+| Kode | Modul | FR terkait |
+|---|---|---|
+| **ONB** | Onboarding & Profil Perusahaan | §4.1–4.2 |
+| **ORG** | Departemen, User & RBAC + Company Switcher | §4.3–4.4 |
+| **RISK** | Risk Register (Identifikasi) | §4.5–4.6 |
+| **ASSESS** | Analisis & Penilaian Risiko | §4.7 |
+| **TREAT** | Respons & Mitigasi (*treatment*) | §4.8 |
+| **MON** | Pemantauan Berkelanjutan (*monitoring*) | §4.9 |
+| **INC** | Incident / Loss-Event Log | §4.10 |
+| **AI** | AI Assistant | §4.11 |
+| **NOTIF** | Notifikasi (in-app + email) | §4.12 |
+| **COMP** | Kepatuhan + Library Regulasi (*compliance*) | §4.13 |
+| **DASH** | Dashboard & Reporting | §4.14 |
+
+**Singkatan lain (non-ID):**
+
+| Singkatan | Kepanjangan | Konteks |
+|---|---|---|
+| **RLS** | Row Level Security | Isolasi data antar tenant di Postgres (D9) |
+| **RBAC** | Role-Based Access Control | Otorisasi per peran, per perusahaan, multi-role (D7/D27) |
+| **KRI** | Key Risk Indicator | Indikator terukur dengan threshold (FR-MON) |
+| **GCG** | Good Corporate Governance | Tata kelola perusahaan; konteks kepatuhan (persona Compliance) |
+| **MoSCoW** | Must / Should / Could / Won't | Prioritisasi fitur (§2.1) |
+| **CRO** | Chief Risk Officer | Persona (§1.4) |
+| **CRMS** | Certified Risk Management Specialist | Standar acuan Indonesia (D2/D11) |
+| **DoD** | Definition of Done | Kriteria selesai (§22) |
+| **DTO** | Data Transfer Object | Bentuk data mentah dari API sebelum di-map ke entity |
 
 ---
 
@@ -2385,4 +2429,4 @@ select public.create_company_with_admin('PT Uji','JASA',10,array['Ops','Finance'
 
 ---
 
-**End of PRD — RiskoFlow v1.6.0**
+**End of PRD — RiskoFlow v1.6.1**

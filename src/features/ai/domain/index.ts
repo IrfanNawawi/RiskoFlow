@@ -4,4 +4,8 @@ export type {
   AiSuggestRisksInput,
   AiTreatmentSuggestion,
   AiSuggestTreatmentInput,
+  AiAssessmentSuggestion,
+  AiSuggestAssessmentInput,
+  AiMonitoringSuggestion,
+  AiSuggestMonitoringInput,
 } from "./IAiSuggestionService";

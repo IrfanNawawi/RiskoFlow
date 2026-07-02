@@ -1,4 +1,11 @@
-import type { IndustryType, RiskCategory, RiskLevel, RiskSource, TreatmentStrategy } from "@/data/types";
+import type {
+  IndustryType,
+  ReviewFrequency,
+  RiskCategory,
+  RiskLevel,
+  RiskSource,
+  TreatmentStrategy,
+} from "@/data/types";
 
 /** Satu usulan risiko dari AI (FR-AI-1) — selalu draft, wajib dikonfirmasi manusia (D6). */
 export interface AiRiskSuggestion {
@@ -37,7 +44,39 @@ export interface AiSuggestTreatmentInput {
   level: RiskLevel;
 }
 
+/** Usulan penilaian awal dari AI (FR-AI-2) — likelihood/impact draft, wajib dikonfirmasi manusia (D6). */
+export interface AiAssessmentSuggestion {
+  likelihood: number; // 1..5
+  impact: number; // 1..5
+  rationale: string; // alasan singkat skor
+  confidence: number; // 0..100
+}
+
+export interface AiSuggestAssessmentInput {
+  riskTitle: string;
+  category: RiskCategory;
+  source: RiskSource;
+  industryType: IndustryType;
+}
+
+/** Usulan rencana pemantauan dari AI (FR-AI-4) — frekuensi review + kandidat KRI, dikonfirmasi manusia. */
+export interface AiMonitoringSuggestion {
+  reviewFrequency: ReviewFrequency; // weekly|monthly|quarterly
+  indicatorName: string; // kandidat KRI
+  threshold: string; // ambang bebas-unit (mis. "90%")
+  rationale: string;
+  confidence: number; // 0..100
+}
+
+export interface AiSuggestMonitoringInput {
+  riskTitle: string;
+  category: RiskCategory;
+  level: RiskLevel;
+}
+
 export interface IAiSuggestionService {
   suggestRisks(input: AiSuggestRisksInput): Promise<AiRiskSuggestion[]>;
   suggestTreatment(input: AiSuggestTreatmentInput): Promise<AiTreatmentSuggestion>;
+  suggestAssessment(input: AiSuggestAssessmentInput): Promise<AiAssessmentSuggestion>;
+  suggestMonitoring(input: AiSuggestMonitoringInput): Promise<AiMonitoringSuggestion>;
 }

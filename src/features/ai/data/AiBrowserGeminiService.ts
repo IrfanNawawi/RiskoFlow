@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type {
+  AiAssessmentSuggestion,
+  AiMonitoringSuggestion,
   AiRiskSuggestion,
+  AiSuggestAssessmentInput,
+  AiSuggestMonitoringInput,
   AiSuggestRisksInput,
   AiSuggestTreatmentInput,
   AiTreatmentSuggestion,
@@ -8,11 +12,19 @@ import type {
 } from "@/features/ai/domain";
 import { AiServiceError } from "./AiEdgeSuggestionService";
 import {
+  ASSESSMENT_GEMINI_SCHEMA,
   GEMINI_MODEL,
+  MONITORING_GEMINI_SCHEMA,
   RISKS_GEMINI_SCHEMA,
   TREATMENT_GEMINI_SCHEMA,
+  assessmentSuggestionSchema,
+  buildAssessmentPrompt,
+  buildMonitoringPrompt,
   buildRisksPrompt,
   buildTreatmentPrompt,
+  monitoringSuggestionSchema,
+  normalizeAssessment,
+  normalizeMonitoring,
   normalizeRisks,
   normalizeTreatment,
   riskSuggestionSchema,
@@ -73,6 +85,20 @@ export class AiBrowserGeminiService implements IAiSuggestionService {
   async suggestTreatment(input: AiSuggestTreatmentInput): Promise<AiTreatmentSuggestion> {
     const raw = await this.call(buildTreatmentPrompt(input), TREATMENT_GEMINI_SCHEMA);
     const parsed = treatmentSuggestionSchema.safeParse(normalizeTreatment(raw as Record<string, unknown>));
+    if (!parsed.success) throw new AiServiceError("Respons AI tidak valid.", parsed.error);
+    return parsed.data;
+  }
+
+  async suggestAssessment(input: AiSuggestAssessmentInput): Promise<AiAssessmentSuggestion> {
+    const raw = await this.call(buildAssessmentPrompt(input), ASSESSMENT_GEMINI_SCHEMA);
+    const parsed = assessmentSuggestionSchema.safeParse(normalizeAssessment(raw as Record<string, unknown>));
+    if (!parsed.success) throw new AiServiceError("Respons AI tidak valid.", parsed.error);
+    return parsed.data;
+  }
+
+  async suggestMonitoring(input: AiSuggestMonitoringInput): Promise<AiMonitoringSuggestion> {
+    const raw = await this.call(buildMonitoringPrompt(input), MONITORING_GEMINI_SCHEMA);
+    const parsed = monitoringSuggestionSchema.safeParse(normalizeMonitoring(raw as Record<string, unknown>));
     if (!parsed.success) throw new AiServiceError("Respons AI tidak valid.", parsed.error);
     return parsed.data;
   }

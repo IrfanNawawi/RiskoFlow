@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type {
+  AiAssessmentSuggestion,
+  AiMonitoringSuggestion,
   AiRiskSuggestion,
+  AiSuggestAssessmentInput,
+  AiSuggestMonitoringInput,
   AiSuggestRisksInput,
   AiSuggestTreatmentInput,
   AiTreatmentSuggestion,
@@ -20,6 +24,7 @@ export const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const RISK_CATEGORIES = ["FINANCIAL", "OPERATIONAL", "LEGAL", "REPUTATIONAL", "STRATEGIC"] as const;
 const RISK_SOURCES = ["INTERNAL", "EXTERNAL"] as const;
 const TREATMENT_STRATEGIES = ["AVOID", "REDUCE", "TRANSFER", "ACCEPT"] as const;
+const REVIEW_FREQUENCIES = ["weekly", "monthly", "quarterly"] as const;
 
 // ── Validasi akhir (Aturan inti #9) ──
 export const riskSuggestionSchema = z.object({
@@ -38,8 +43,25 @@ export const treatmentSuggestionSchema = z.object({
   confidence: z.number().int().min(0).max(100),
 }) satisfies z.ZodType<AiTreatmentSuggestion>;
 
+export const assessmentSuggestionSchema = z.object({
+  likelihood: z.number().int().min(1).max(5),
+  impact: z.number().int().min(1).max(5),
+  rationale: z.string(),
+  confidence: z.number().int().min(0).max(100),
+}) satisfies z.ZodType<AiAssessmentSuggestion>;
+
+export const monitoringSuggestionSchema = z.object({
+  reviewFrequency: z.enum(REVIEW_FREQUENCIES),
+  indicatorName: z.string().min(1),
+  threshold: z.string().min(1),
+  rationale: z.string(),
+  confidence: z.number().int().min(0).max(100),
+}) satisfies z.ZodType<AiMonitoringSuggestion>;
+
 export const risksResponseSchema = z.object({ suggestions: z.array(riskSuggestionSchema) });
 export const treatmentResponseSchema = z.object({ suggestion: treatmentSuggestionSchema });
+export const assessmentResponseSchema = z.object({ suggestion: assessmentSuggestionSchema });
+export const monitoringResponseSchema = z.object({ suggestion: monitoringSuggestionSchema });
 
 // ── Skema keluaran terstruktur Gemini (subset OpenAPI untuk `responseSchema`) ──
 export const RISKS_GEMINI_SCHEMA = {
@@ -69,6 +91,29 @@ export const TREATMENT_GEMINI_SCHEMA = {
   required: ["strategy", "description", "confidence"],
 } as const;
 
+export const ASSESSMENT_GEMINI_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    likelihood: { type: "INTEGER" },
+    impact: { type: "INTEGER" },
+    rationale: { type: "STRING" },
+    confidence: { type: "INTEGER" },
+  },
+  required: ["likelihood", "impact", "rationale", "confidence"],
+} as const;
+
+export const MONITORING_GEMINI_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    reviewFrequency: { type: "STRING", enum: REVIEW_FREQUENCIES },
+    indicatorName: { type: "STRING" },
+    threshold: { type: "STRING" },
+    rationale: { type: "STRING" },
+    confidence: { type: "INTEGER" },
+  },
+  required: ["reviewFrequency", "indicatorName", "threshold", "rationale", "confidence"],
+} as const;
+
 // ── Prompt (payload non-sensitif saja — NFR-08) ──
 export const buildRisksPrompt = ({ industryType, departmentName, existingTitles }: AiSuggestRisksInput): string =>
   [
@@ -88,6 +133,25 @@ export const buildTreatmentPrompt = ({ riskTitle, category, level }: AiSuggestTr
     `Risiko: "${riskTitle}" (kategori ${category}, level ${level}).`,
     "Sarankan satu strategi mitigasi (AVOID/REDUCE/TRANSFER/ACCEPT) yang paling tepat untuk level ini,",
     "beserta deskripsi tindakan konkret (1-2 kalimat, Bahasa Indonesia) dan confidence 0..100.",
+    "Balas HANYA JSON objek sesuai skema.",
+  ].join("\n");
+
+export const buildAssessmentPrompt = ({ riskTitle, category, source, industryType }: AiSuggestAssessmentInput): string =>
+  [
+    "Anda asisten manajemen risiko ISO 31000:2018 untuk UMKM Indonesia.",
+    `Industri: ${industryType}. Risiko: "${riskTitle}" (kategori ${category}, sumber ${source}).`,
+    "Usulkan penilaian awal: likelihood & impact pada skala 1..5 (1=sangat rendah, 5=sangat tinggi),",
+    "rationale singkat (1 kalimat, Bahasa Indonesia) yang menjelaskan dasar skor, dan confidence 0..100.",
+    "Balas HANYA JSON objek sesuai skema.",
+  ].join("\n");
+
+export const buildMonitoringPrompt = ({ riskTitle, category, level }: AiSuggestMonitoringInput): string =>
+  [
+    "Anda asisten manajemen risiko ISO 31000:2018 untuk UMKM Indonesia.",
+    `Risiko: "${riskTitle}" (kategori ${category}, level ${level}).`,
+    "Usulkan rencana pemantauan: reviewFrequency (weekly/monthly/quarterly) yang sesuai level",
+    "(makin tinggi level makin sering), satu kandidat KRI (indicatorName) yang terukur beserta",
+    "ambangnya (threshold, boleh berunit mis. \"90%\"), rationale singkat (Bahasa Indonesia), confidence 0..100.",
     "Balas HANYA JSON objek sesuai skema.",
   ].join("\n");
 
@@ -119,4 +183,19 @@ export const normalizeTreatment = (parsed: Record<string, unknown>): AiTreatment
   strategy: oneOf(parsed?.strategy, TREATMENT_STRATEGIES, "REDUCE"),
   description: String(parsed?.description ?? "").slice(0, 600),
   confidence: clamp(parsed?.confidence, 0, 100, 75),
+});
+
+export const normalizeAssessment = (parsed: Record<string, unknown>): AiAssessmentSuggestion => ({
+  likelihood: clamp(parsed?.likelihood, 1, 5, 3),
+  impact: clamp(parsed?.impact, 1, 5, 3),
+  rationale: String(parsed?.rationale ?? "").slice(0, 400),
+  confidence: clamp(parsed?.confidence, 0, 100, 70),
+});
+
+export const normalizeMonitoring = (parsed: Record<string, unknown>): AiMonitoringSuggestion => ({
+  reviewFrequency: oneOf(parsed?.reviewFrequency, REVIEW_FREQUENCIES, "monthly"),
+  indicatorName: String(parsed?.indicatorName ?? "").slice(0, 100),
+  threshold: String(parsed?.threshold ?? "").slice(0, 40),
+  rationale: String(parsed?.rationale ?? "").slice(0, 400),
+  confidence: clamp(parsed?.confidence, 0, 100, 72),
 });

@@ -26,4 +26,28 @@ describe("MockAiSuggestionService", () => {
     expect(low.strategy).toBe("ACCEPT");
     expect(extreme.description).toContain("X");
   });
+
+  it("suggestAssessment mengusulkan likelihood/impact 1..5 sesuai sumber & kategori (FR-AI-2)", async () => {
+    const ext = await service.suggestAssessment({ riskTitle: "X", category: "FINANCIAL", source: "EXTERNAL", industryType: "JASA" });
+    const int = await service.suggestAssessment({ riskTitle: "X", category: "OPERATIONAL", source: "INTERNAL", industryType: "JASA" });
+    for (const s of [ext, int]) {
+      expect(s.likelihood).toBeGreaterThanOrEqual(1);
+      expect(s.likelihood).toBeLessThanOrEqual(5);
+      expect(s.impact).toBeGreaterThanOrEqual(1);
+      expect(s.impact).toBeLessThanOrEqual(5);
+      expect(s.confidence).toBeGreaterThanOrEqual(0);
+    }
+    // Sumber eksternal → likelihood lebih tinggi; kategori dampak-berat → impact lebih tinggi.
+    expect(ext.likelihood).toBeGreaterThan(int.likelihood);
+    expect(ext.impact).toBeGreaterThan(int.impact);
+  });
+
+  it("suggestMonitoring menyetel frekuensi review sesuai level (FR-AI-4)", async () => {
+    const extreme = await service.suggestMonitoring({ riskTitle: "X", category: "OPERATIONAL", level: "EXTREME" });
+    const low = await service.suggestMonitoring({ riskTitle: "X", category: "OPERATIONAL", level: "LOW" });
+    expect(extreme.reviewFrequency).toBe("weekly");
+    expect(low.reviewFrequency).toBe("quarterly");
+    expect(extreme.indicatorName.length).toBeGreaterThan(0);
+    expect(extreme.threshold.length).toBeGreaterThan(0);
+  });
 });

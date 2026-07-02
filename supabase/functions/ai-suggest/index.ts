@@ -5,9 +5,11 @@
 // menyusun prompt dari payload yang SUDAH disanitasi (tanpa PII / data tenant), memanggil Gemini
 // dengan `responseSchema` JSON, lalu memvalidasi & clamp hasilnya sebelum dikembalikan ke client.
 //
-// Kontrak request : POST { action: "risks" | "treatment", payload }
-// Kontrak response: 200 { suggestions: AiRiskSuggestion[] }  (action "risks")
-//                   200 { suggestion: AiTreatmentSuggestion } (action "treatment")
+// Kontrak request : POST { action: "risks" | "treatment" | "assessment" | "monitoring", payload }
+// Kontrak response: 200 { suggestions: AiRiskSuggestion[] }   (action "risks")
+//                   200 { suggestion: AiTreatmentSuggestion }  (action "treatment")
+//                   200 { suggestion: AiAssessmentSuggestion } (action "assessment", FR-AI-2)
+//                   200 { suggestion: AiMonitoringSuggestion } (action "monitoring", FR-AI-4)
 //                   4xx/5xx { error } → client (AiEdgeSuggestionService) menampilkan pesan error.
 //
 // Selaras tipe `IAiSuggestionService` di src/features/ai/domain.
@@ -23,6 +25,7 @@ const RISK_SOURCES = ["INTERNAL", "EXTERNAL"];
 const TREATMENT_STRATEGIES = ["AVOID", "REDUCE", "TRANSFER", "ACCEPT"];
 const INDUSTRIES = ["JASA", "DAGANG", "MANUFACTURE"];
 const RISK_LEVELS = ["LOW", "MEDIUM", "HIGH", "EXTREME"];
+const REVIEW_FREQUENCIES = ["weekly", "monthly", "quarterly"];
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -62,6 +65,29 @@ const TREATMENT_SCHEMA = {
     confidence: { type: "INTEGER" },
   },
   required: ["strategy", "description", "confidence"],
+};
+
+const ASSESSMENT_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    likelihood: { type: "INTEGER" },
+    impact: { type: "INTEGER" },
+    rationale: { type: "STRING" },
+    confidence: { type: "INTEGER" },
+  },
+  required: ["likelihood", "impact", "rationale", "confidence"],
+};
+
+const MONITORING_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    reviewFrequency: { type: "STRING", enum: REVIEW_FREQUENCIES },
+    indicatorName: { type: "STRING" },
+    threshold: { type: "STRING" },
+    rationale: { type: "STRING" },
+    confidence: { type: "INTEGER" },
+  },
+  required: ["reviewFrequency", "indicatorName", "threshold", "rationale", "confidence"],
 };
 
 const clamp = (n: unknown, min: number, max: number, fallback: number): number => {
@@ -157,6 +183,64 @@ async function handleTreatment(apiKey: string, payload: any) {
   return json(200, { suggestion });
 }
 
+// --- action: assessment (FR-AI-2) ---
+async function handleAssessment(apiKey: string, payload: any) {
+  const riskTitle = String(payload?.riskTitle ?? "").slice(0, 200);
+  const category = oneOf(payload?.category, RISK_CATEGORIES, "OPERATIONAL");
+  const source = oneOf(payload?.source, RISK_SOURCES, "INTERNAL");
+  const industryType = oneOf(payload?.industryType, INDUSTRIES, "JASA");
+
+  const prompt = [
+    "Anda asisten manajemen risiko ISO 31000:2018 untuk UMKM Indonesia.",
+    `Industri: ${industryType}. Risiko: "${riskTitle}" (kategori ${category}, sumber ${source}).`,
+    "Usulkan penilaian awal: likelihood & impact pada skala 1..5 (1=sangat rendah, 5=sangat tinggi),",
+    "rationale singkat (1 kalimat, Bahasa Indonesia) yang menjelaskan dasar skor, dan confidence 0..100.",
+    "Balas HANYA JSON objek sesuai skema.",
+  ].join("\n");
+
+  const raw = await callGemini(apiKey, prompt, ASSESSMENT_SCHEMA);
+  const parsed = JSON.parse(raw);
+
+  const suggestion = {
+    likelihood: clamp(parsed?.likelihood, 1, 5, 3),
+    impact: clamp(parsed?.impact, 1, 5, 3),
+    rationale: String(parsed?.rationale ?? "").slice(0, 400),
+    confidence: clamp(parsed?.confidence, 0, 100, 70),
+  };
+
+  return json(200, { suggestion });
+}
+
+// --- action: monitoring (FR-AI-4) ---
+async function handleMonitoring(apiKey: string, payload: any) {
+  const riskTitle = String(payload?.riskTitle ?? "").slice(0, 200);
+  const category = oneOf(payload?.category, RISK_CATEGORIES, "OPERATIONAL");
+  const level = oneOf(payload?.level, RISK_LEVELS, "MEDIUM");
+
+  const prompt = [
+    "Anda asisten manajemen risiko ISO 31000:2018 untuk UMKM Indonesia.",
+    `Risiko: "${riskTitle}" (kategori ${category}, level ${level}).`,
+    "Usulkan rencana pemantauan: reviewFrequency (weekly/monthly/quarterly) yang sesuai level",
+    "(makin tinggi level makin sering), satu kandidat KRI (indicatorName) yang terukur beserta",
+    'ambangnya (threshold, boleh berunit mis. "90%"), rationale singkat (Bahasa Indonesia), confidence 0..100.',
+    "Balas HANYA JSON objek sesuai skema.",
+  ].join("\n");
+
+  const raw = await callGemini(apiKey, prompt, MONITORING_SCHEMA);
+  const parsed = JSON.parse(raw);
+
+  const suggestion = {
+    reviewFrequency: oneOf(parsed?.reviewFrequency, REVIEW_FREQUENCIES, "monthly"),
+    indicatorName: String(parsed?.indicatorName ?? "").slice(0, 100),
+    threshold: String(parsed?.threshold ?? "").slice(0, 40),
+    rationale: String(parsed?.rationale ?? "").slice(0, 400),
+    confidence: clamp(parsed?.confidence, 0, 100, 72),
+  };
+  if (!suggestion.indicatorName) throw new Error("Keluaran monitoring tanpa indikator");
+
+  return json(200, { suggestion });
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -177,6 +261,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return await handleRisks(apiKey, body?.payload ?? {});
       case "treatment":
         return await handleTreatment(apiKey, body?.payload ?? {});
+      case "assessment":
+        return await handleAssessment(apiKey, body?.payload ?? {});
+      case "monitoring":
+        return await handleMonitoring(apiKey, body?.payload ?? {});
       default:
         return json(400, { error: `action tak dikenal: ${body?.action}` });
     }
