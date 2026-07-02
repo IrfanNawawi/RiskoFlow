@@ -24,10 +24,13 @@ PRD v1.6.1 status. Updated **2026-07-02**.
 
 ### FR-ONB: Onboarding & Profil Perusahaan (§3.1)
 - **Status:** 🟡 (UI ✅, backend mock)
-- **Tasks:**
-  - [ ] `createCompanyWithAdmin` RPC: atom new company + seed dept + create admin (D25)
-  - [ ] Pilihan tipe biz (jasa/dagang/manufaktur) → seed regulasi industri
-  - [ ] Phone format ID via Zod + format.ts
+- **Implemented:**
+  - Wizard 3 langkah (`OnboardingPage`) + validasi Zod per-langkah (`onboarding.schema`)
+  - `createCompanyWithAdmin` (mock store + RPC `create_company_with_admin`): atomik buat tenant +
+    seed departemen (dedupe case-insensitive) + admin+risk_manager (D25/D27)
+  - Tipe biz (jasa/dagang/manufaktur) → seed regulasi GENERAL + industri (`INDUSTRY_SEED`)
+- **Remaining:**
+  - [ ] Phone format ID via Zod + `format.ts` (butuh kolom `phone` + param RPC → 🎯 backend)
 
 ### FR-ORG: Departemen, User & RBAC (§3.2)
 - **Status:** ✅ (dept CRUD ✅, anggota & peran ✅, switcher ✅; RLS/Auth 🎯)
@@ -113,17 +116,18 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - [ ] Guard kuota harian + key di Vault (D10/D20)
 
 ### FR-NOTIF: Notifikasi (§3.10)
-- **Status:** 🟡 (in-app ✅; email + Cron/Queues 🎯)
+- **Status:** 🟡 (in-app ✅ + read-state persist ✅; email + Cron/Queues 🎯)
 - **Structure:** `src/features/notifications/` (derived + read-state, seperti dashboard/org)
 - **Implemented:**
   - In-app pusat notifikasi (`components/NotificationCenter.tsx`): lonceng Topbar + badge unread + dropdown
   - Derivasi murni (`build.ts`): review terlambat (critical) / akan jatuh tempo ≤7 hari (warning) + insiden approved (info); scope perusahaan aktif, urut per severity
-  - Read-state Zustand in-memory (`store.ts`) — buka panel = tandai semua terbaca; klik item → navigasi + tandai terbaca
-  - 7 unit test derivasi (`__tests__/unit/buildNotifications.test.ts`)
+  - Read-state Zustand (`store.ts`) — buka panel = tandai semua terbaca; klik item → navigasi + tandai terbaca
+  - **Persist read-state**: `zustand/persist` → `localStorage` (Set diserialisasi via replacer/reviver); badge unread bertahan lintas reload
+  - 11 unit test (`buildNotifications` derivasi + `readStore` persist/rehydrate)
 - **Remaining 🎯:**
   - [ ] Email via Supabase Queues: digest harian
   - [ ] Cron: scan next_review_date, flag alert (daily 09:00)
-  - [ ] Persist read-state ke DB (kini reset saat reload)
+  - [ ] Persist read-state ke DB per-user (kini di localStorage; hilang bila ganti device/clear)
 
 ### FR-COMP: Kepatuhan + Library Regulasi (§3.11)
 - **Status:** ✅ (CRUD ✅, laporan ✅, duplikasi ✅)
