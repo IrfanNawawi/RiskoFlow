@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, Icon, Button } from "@/components/ui";
 import { cn } from "@/lib/format";
 import { buildRiskExportRows, exportRowsToXlsx, exportRowsToPdf, todayStamp } from "@/lib/export";
-import { reportableRisks } from "@/features/reports/domain";
+import { reportableRisks, REPORT_COLUMNS, reportColumnLabel, projectRows } from "@/features/reports/domain";
 import { useReportRegister } from "../hooks/useReportRegister";
 
 const TEMPLATES = [
@@ -12,14 +12,13 @@ const TEMPLATES = [
   { id: "loss", title: "Analisis Tren Kerugian", desc: "Laporan prediktif pergerakan loss event untuk perumusan strategi kuartal depan.", icon: "trending_up", formats: ["PDF", "XLS"], big: true },
 ];
 
-const PARAMS = ["Kategori Risiko", "Nilai Dampak", "Probabilitas", "Departemen", "Status Mitigasi", "Periode"];
-
 export function ReportsPage() {
-  const [dropped, setDropped] = useState<string[]>(["Kategori Risiko", "Departemen"]);
+  // `dropped` = id kolom terpilih (katalog `REPORT_COLUMNS`) untuk Custom Report Builder.
+  const [dropped, setDropped] = useState<string[]>(["kategori", "departemen"]);
   const [dragOver, setDragOver] = useState(false);
 
   const { data } = useReportRegister();
-  const available = PARAMS.filter((p) => !dropped.includes(p));
+  const available = REPORT_COLUMNS.filter((c) => !dropped.includes(c.id));
 
   // Sumber data ekspor: risiko aktif terkonfirmasi (abaikan draft AI), nama di-resolve dari referensi.
   const rows = useMemo(() => {
@@ -33,10 +32,12 @@ export function ReportsPage() {
     );
   }, [data]);
 
-  const exportRegister = (format: "PDF" | "XLS", title: string) => {
+  // Template cepat = seluruh kolom; Custom builder = hanya kolom terpilih (base + `dropped`).
+  const exportRegister = (format: "PDF" | "XLS", title: string, columnIds?: string[]) => {
+    const out = columnIds ? projectRows(rows, columnIds) : rows;
     const base = `riskoflow-${title.toLowerCase().replace(/\s+/g, "-")}-${todayStamp()}`;
-    if (format === "XLS") exportRowsToXlsx(rows, { filename: `${base}.xlsx` });
-    else exportRowsToPdf(rows, { filename: `${base}.pdf`, title, subtitle: `${rows.length} risiko · diekspor ${todayStamp()}` });
+    if (format === "XLS") exportRowsToXlsx(out, { filename: `${base}.xlsx` });
+    else exportRowsToPdf(out, { filename: `${base}.pdf`, title, subtitle: `${out.length} risiko · diekspor ${todayStamp()}` });
   };
 
   return (
@@ -90,15 +91,17 @@ export function ReportsPage() {
           <div className="rounded-[16px] border border-border-hairline bg-surface-muted p-4">
             <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-text-secondary">Parameter Tersedia</p>
             <div className="flex flex-wrap gap-2">
-              {available.map((p) => (
-                <span
-                  key={p}
+              {available.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
                   draggable
-                  onDragStart={(e) => e.dataTransfer.setData("text/plain", p)}
+                  onDragStart={(e) => e.dataTransfer.setData("text/plain", c.id)}
+                  onClick={() => setDropped((d) => [...d, c.id])}
                   className="flex cursor-grab items-center gap-1.5 rounded-full border border-border-hairline bg-surface px-3 py-1.5 text-[12px] font-medium text-on-surface-variant active:cursor-grabbing"
                 >
-                  <Icon name="drag_indicator" size={15} className="text-outline" /> {p}
-                </span>
+                  <Icon name="drag_indicator" size={15} className="text-outline" /> {c.label}
+                </button>
               ))}
               {available.length === 0 && <span className="text-[12px] text-text-secondary">Semua parameter terpakai.</span>}
             </div>
@@ -124,10 +127,10 @@ export function ReportsPage() {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {dropped.map((p) => (
-                  <span key={p} className="flex items-center gap-1.5 rounded-full bg-primary-fixed px-3 py-1.5 text-[13px] font-medium text-primary">
-                    {p}
-                    <button onClick={() => setDropped((d) => d.filter((x) => x !== p))} className="hover:text-error"><Icon name="close" size={14} /></button>
+                {dropped.map((id) => (
+                  <span key={id} className="flex items-center gap-1.5 rounded-full bg-primary-fixed px-3 py-1.5 text-[13px] font-medium text-primary">
+                    {reportColumnLabel(id)}
+                    <button onClick={() => setDropped((d) => d.filter((x) => x !== id))} className="hover:text-error"><Icon name="close" size={14} /></button>
                   </span>
                 ))}
               </div>
@@ -135,8 +138,8 @@ export function ReportsPage() {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => exportRegister("XLS", "Custom Report")}>Ekspor XLSX</Button>
-          <Button icon="rocket_launch" className="flex-1 sm:flex-none" onClick={() => exportRegister("PDF", "Custom Report")}>Generate PDF</Button>
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => exportRegister("XLS", "Custom Report", dropped)}>Ekspor XLSX</Button>
+          <Button icon="rocket_launch" className="flex-1 sm:flex-none" onClick={() => exportRegister("PDF", "Custom Report", dropped)}>Generate PDF</Button>
         </div>
       </Card>
     </div>
