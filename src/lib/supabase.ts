@@ -19,6 +19,17 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? "";
 export const isSupabaseConfigured = url.length > 0 && anonKey.length > 0;
 
 /**
+ * `true` bila **Supabase Auth** diaktifkan secara eksplisit (`VITE_SUPABASE_AUTH=true`).
+ *
+ * ⚠️ Sengaja terpisah dari `isSupabaseConfigured`: PostgREST/DB bisa aktif sementara
+ * Auth masih ditunda (belum ada user Auth). Selama flag ini `false`, fitur auth memakai
+ * login demo (pilih user) agar app tetap dapat dipakai; scoping tetap client-side.
+ * Butuh `isSupabaseConfigured` juga (Auth mustahil tanpa klien terkonfigurasi).
+ */
+export const isAuthEnabled =
+  isSupabaseConfigured && import.meta.env.VITE_SUPABASE_AUTH?.trim() === "true";
+
+/**
  * Klien Supabase. Saat tipe DB sudah di-generate (`supabase gen types typescript`),
  * ganti menjadi `createClient<Database>(...)` dari `@/lib/database.types` agar query
  * type-safe. Kini dibiarkan generik-lepas; hasil query di-cast ke DTO di datasource.

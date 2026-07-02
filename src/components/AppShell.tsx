@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Outlet, useRouterState } from "@tanstack/react-router";
+import { Navigate, Outlet, useRouterState } from "@tanstack/react-router";
+import { useAuthStore } from "@/features/auth";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { NewRiskModal } from "./NewRiskModal";
@@ -8,9 +9,13 @@ export function AppShell() {
   const [modalOpen, setModalOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const authStatus = useAuthStore((s) => s.status);
 
   // Tutup drawer setiap kali pindah route (mobile/tablet).
   useEffect(() => setNavOpen(false), [pathname]);
+
+  // Guard: hanya user terautentikasi yang boleh masuk shell (NFR-01; RLS = otoritas sesungguhnya).
+  if (authStatus === "unauthenticated") return <Navigate to="/login" />;
 
   return (
     <div className="min-h-screen bg-background-canvas p-2 md:p-3">

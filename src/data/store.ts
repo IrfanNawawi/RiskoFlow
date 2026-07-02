@@ -148,6 +148,8 @@ interface State {
   removeMember: (userId: string) => OrgResult;
 
   setActiveCompany: (id: string) => void;
+  /** Set user aktif (dari sesi Auth). Pastikan perusahaan aktif tetap milik user tsb. */
+  setCurrentUser: (userId: string) => void;
   setRole: (role: MembershipRole | "all") => void; // demo role impersonation
   demoRole: MembershipRole | "all";
   toggleAi: () => void;
@@ -292,6 +294,16 @@ export const useStore = create<State>((set, get) => ({
   activeAudit: () => get().audit.filter((a) => a.companyId === get().activeCompanyId),
 
   setActiveCompany: (id) => set({ activeCompanyId: id, demoRole: "all" }),
+  setCurrentUser: (userId) =>
+    set((s) => {
+      const owned = s.companies.filter((c) => s.memberships.some((m) => m.userId === userId && m.companyId === c.id));
+      const activeOk = owned.some((c) => c.id === s.activeCompanyId);
+      return {
+        currentUserId: userId,
+        activeCompanyId: activeOk ? s.activeCompanyId : (owned[0]?.id ?? s.activeCompanyId),
+        demoRole: "all",
+      };
+    }),
   setRole: (role) => set({ demoRole: role }),
   toggleAi: () =>
     set((s) => ({

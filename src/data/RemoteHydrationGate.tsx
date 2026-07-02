@@ -30,7 +30,7 @@ export function RemoteHydrationGate({ children }: { children: ReactNode }) {
       <Centered>
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-[14px] font-semibold text-error">Gagal memuat data dari Supabase.</p>
-          <p className="max-w-md text-[12px] text-text-secondary">{(error as Error).message}</p>
+          <p className="max-w-[28rem] text-[12px] text-text-secondary">{(error as Error).message}</p>
           <button onClick={() => refetch()} className="rounded-full bg-primary px-4 py-1.5 text-[13px] font-semibold text-on-primary">
             Coba lagi
           </button>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Navigate, useNavigate } from "@tanstack/react-router";
+import { useAuthStore } from "@/features/auth";
 import { useStore } from "@/data/store";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { fetchSnapshot } from "@/data/remote";
@@ -22,6 +23,7 @@ const PRESETS: Record<IndustryType, string[]> = {
 
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const authStatus = useAuthStore((s) => s.status);
   const createCompany = useStore((s) => s.createCompanyWithAdmin);
   const hydrate = useStore((s) => s.hydrate);
   const setActiveCompany = useStore((s) => s.setActiveCompany);
@@ -33,6 +35,8 @@ export function OnboardingPage() {
   const [departments, setDepartments] = useState<string[]>([]);
   const [deptInput, setDeptInput] = useState("");
   const [error, setError] = useState("");
+
+  if (authStatus === "unauthenticated") return <Navigate to="/login" />;
 
   function addDept(value: string) {
     const v = value.trim();
