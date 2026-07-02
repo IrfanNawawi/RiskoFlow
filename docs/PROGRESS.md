@@ -90,17 +90,21 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - Data layer: full domain/data/presentation
 
 ### FR-DASH: Dashboard & Reporting (§3.8)
-- **Status:** 🟡 (ekspor ✅, builder UI mock; data layer ✅)
+- **Status:** 🟡 (ekspor ✅, builder pilih kolom ✅ (filter nilai 🎯); data layer ✅)
 - **Structure:** `dashboard` & `reports` full domain/data/presentation (mirror `risks`)
 - **Implemented:**
   - Dashboard: risk count + heatmap + top mitigasi
   - Ekspor Risk Register `.xlsx`/`.pdf` respecting filter (lazy chunk)
+  - **Custom Report Builder fungsional (FR-DASH-3):** katalog kolom `reports/domain/entities/columns`
+    (`REPORT_COLUMNS` + `projectRows`/`selectedColumnKeys`, 7 unit test); drag/klik kolom → ekspor XLSX/PDF
+    hanya kolom terpilih (base Kode+Judul selalu ikut). Template cepat tetap seluruh kolom.
   - **Data layer Clean Arch:** metrik dashboard = pure function `domain/entities/metrics` (11 unit test);
     `DashboardRepository`/`ReportsRepository` meng-compose `IRiskRepository`/`IIncidentRepository`
     (reuse SELECT/mapper) + `*ReferenceDataSource` (dept/user/company) via DI hook + TanStack Query
     (`useDashboardOverview`/`useReportRegister`, key ter-scope tenant). Page tak lagi akses `@/data/store`.
 - **Tasks:**
-  - [ ] Reports builder: UI select column + filter (mock only)
+  - [x] Reports builder: pilih kolom → ekspor terproyeksi (mock)
+  - [ ] Reports builder: filter nilai (mis. kategori/periode/status) + simpan preset laporan
 
 ### FR-AI: AI Assistant (§3.9)
 - **Status:** ✅ (risk + assess + mitigation + monitor draft; kuota 🎯)
