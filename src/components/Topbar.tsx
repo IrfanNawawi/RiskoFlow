@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useStore } from "@/data/store";
 import { Icon } from "./ui";
+import { NotificationCenter } from "./NotificationCenter";
 import { cn } from "@/lib/format";
 import type { MembershipRole } from "@/data/types";
 
@@ -104,10 +105,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           )}
         </div>
 
-        <button className="relative flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-muted hover:text-primary">
-          <Icon name="notifications" size={22} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-risk-extreme" />
-        </button>
+        <NotificationCenter />
         <div className="flex items-center gap-2 rounded-full border border-border-hairline bg-surface p-1 sm:py-1 sm:pl-1 sm:pr-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-[12px] font-bold text-on-primary">
             {user?.initials}

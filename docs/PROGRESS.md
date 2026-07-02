@@ -1,6 +1,6 @@
 # RiskoFlow — Progress Tracker
 
-PRD v1.6.1 status. Updated **2026-07-01**.
+PRD v1.6.1 status. Updated **2026-07-02**.
 
 > **Dual-mode active:** Supabase optional (`VITE_SUPABASE_*` env). Fallback mock in-memory. DB-enforced invariants (severity/gate/RLS/audit) live in migrations. Auth still mock (`currentUserId`); RLS permissive. 
 > Ref: [frontend-structure.md](../.claude/guidelines/frontend-structure.md) (Clean Arch), [PRD.md](PRD.md) (spec).
@@ -16,7 +16,7 @@ PRD v1.6.1 status. Updated **2026-07-01**.
 | Code splitting, CI gates (typecheck/lint/test/build) | ✅ | Via Vite + Vitest |
 | Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; auth+Edge Fn 🎯 |
 | AI (Edge Fn + Gemini) | ✅ | Risk + mitigation drafts; gate kuota 🎯 |
-| Notifikasi (in-app + email) | ⛔ | Cron + Queues 🎯 |
+| Notifikasi (in-app + email) | 🟡 | In-app pusat notifikasi ✅; email + Cron/Queues 🎯 |
 
 ---
 
@@ -109,11 +109,17 @@ PRD v1.6.1 status. Updated **2026-07-01**.
   - [ ] Guard kuota harian + key di Vault (D10/D20)
 
 ### FR-NOTIF: Notifikasi (§3.10)
-- **Status:** ⛔ (🎯 Cron + Queues + email service)
-- **Tasks:**
-  - [ ] In-app: toast/modal at review due + insiden approved
+- **Status:** 🟡 (in-app ✅; email + Cron/Queues 🎯)
+- **Structure:** `src/features/notifications/` (derived + read-state, seperti dashboard/org)
+- **Implemented:**
+  - In-app pusat notifikasi (`components/NotificationCenter.tsx`): lonceng Topbar + badge unread + dropdown
+  - Derivasi murni (`build.ts`): review terlambat (critical) / akan jatuh tempo ≤7 hari (warning) + insiden approved (info); scope perusahaan aktif, urut per severity
+  - Read-state Zustand in-memory (`store.ts`) — buka panel = tandai semua terbaca; klik item → navigasi + tandai terbaca
+  - 7 unit test derivasi (`__tests__/unit/buildNotifications.test.ts`)
+- **Remaining 🎯:**
   - [ ] Email via Supabase Queues: digest harian
   - [ ] Cron: scan next_review_date, flag alert (daily 09:00)
+  - [ ] Persist read-state ke DB (kini reset saat reload)
 
 ### FR-COMP: Kepatuhan + Library Regulasi (§3.11)
 - **Status:** ✅ (CRUD ✅, laporan ✅, duplikasi ✅)
