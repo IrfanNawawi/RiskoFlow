@@ -1,16 +1,16 @@
 # RiskoFlow — Enterprise Risk Management
 
 Web app pengelolaan manajemen risiko berbasis **ISO 31000:2018**, dibangun sesuai
-[`PRD.md`](docs/PRD.md) (v1.6) & sistem desain **"Premium Calm Enterprise"** dari
+[`PRD.md`](docs/PRD.md) (v1.6.1) & sistem desain **"Premium Calm Enterprise"** dari
 [`DESIGN.md`](docs/DESIGN.md).
 
 ## Stack
 
 - **React 19** + **TypeScript (strict)** + **Vite 6**
 - **Tailwind CSS v4** (CSS-first `@theme` — semua design token DESIGN.md)
-- **React Router** (typed URL search params untuk filter register)
+- **TanStack Router** (typed URL search params untuk filter register)
 - **TanStack Query** + **Zustand** (state perusahaan aktif & RBAC)
-- **Recharts** (donut/bar dashboard), **Material Symbols** (ikon)
+- **react-hook-form + Zod** (form & validasi), **Recharts** (donut/bar dashboard)
 
 > **Catatan backend (dual-mode):** integrasi **Supabase** sudah ada (`supabase/migrations/`,
 > `src/lib/supabase.ts`). Isi `.env` (lihat `.env.example`) + `supabase db push`/`db reset`
@@ -28,19 +28,21 @@ bun install
 bun run dev        # http://localhost:5173
 ```
 
-Perintah lain: `bun run build` · `bun run preview` · `bun run typecheck`.
+Perintah lain: `bun run build` · `bun run preview` · `bun run typecheck` ·
+`bun run lint` · `bun run test` · `bun run e2e`.
 
 ## Fitur yang diimplementasikan
 
 | Halaman | PRD | Catatan |
 |---|---|---|
 | **Onboarding** (`/onboarding`) | §3.1 | Wizard 3 langkah, preset departemen per industri, dedupe, seed atomik |
-| **Dashboard** (`/dashboard`) | §3.11 | KPI, heatmap 5×5, distribusi kategori/departemen, top risks, perlu ditinjau |
+| **Organisasi** (`/organisasi`) | §3.2 | CRUD departemen (guard arsip), undang anggota + multi-peran (D27), guard last-admin |
+| **Dashboard** (`/dashboard`) | §3.8 | KPI, heatmap 5×5, distribusi kategori/departemen, top risks, perlu ditinjau |
 | **Risk Register** (`/risks`) | §3.3–3.4 | Filter via typed URL params, heatmap interaktif (klik sel), draft AI + konfirmasi |
 | **Risk Detail** (`/risks/:id`) | §3.4–3.6 | Stepper status, inherent→residual, mitigasi + approval ACCEPT, KRI, kepatuhan |
 | **Insiden** (`/incidents`) | §3.7 | Loss/near-miss, gate approval penutupan kerugian ≥ threshold |
-| **Compliance** (`/compliance`) | §3.9 | Library regulasi (GENERAL + per industri), progress, gap analysis |
-| **Reports** (`/reports`) | §3.11 | Template cepat + custom report builder (drag & drop parameter) |
+| **Compliance** (`/compliance`) | §3.11 | Library regulasi (GENERAL + per industri), progress, gap analysis |
+| **Reports** (`/reports`) | §3.8 | Template cepat + custom report builder (drag & drop parameter) |
 | **Audit Trail** (`/audit`) | NFR-04 | Jejak who/when/what dari semua aksi |
 
 **RBAC & multi-tenant:** company switcher (≥2 membership), simulator peran di topbar
@@ -51,8 +53,8 @@ kontrol approval secara real-time.
 
 ```
 src/
-  data/        # types · seed · store (Zustand) — pengganti repository Supabase
-  lib/         # risk.ts (computeRiskLevel kanonik, D4) · format.ts (IDR integer)
+  data/        # types · seed · store (Zustand mock) · remote (hidrasi Supabase) — dual-mode fallback
+  lib/         # risk.ts (computeRiskLevel kanonik, D4) · format.ts (IDR integer) · supabase.ts
   components/  # AppShell · Sidebar · Topbar · RiskBadge · Heatmap · ui primitives
-  features/    # onboarding · dashboard · risks · incidents · compliance · reports · audit
+  features/    # onboarding · org · dashboard · risks · incidents · compliance · reports · audit · ai
 ```

@@ -6,7 +6,7 @@ pemantauan → insiden, dengan bantuan AI sebagai *usulan* yang wajib dikonfirma
 **multi-tenant**: satu user bisa tergabung di banyak perusahaan dengan banyak peran, berpindah lewat
 *company switcher*.
 
-Sumber kebenaran produk: **[`docs/PRD.md`](docs/PRD.md)** (v1.6) — *apa* yang dibangun & *mengapa*;
+Sumber kebenaran produk: **[`docs/PRD.md`](docs/PRD.md)** (v1.6.1) — *apa* yang dibangun & *mengapa*;
 keputusan mengikat ada di **§9 Decision Log** (rujuk sebagai `D1`–`D27`). Sistem desain:
 **[`docs/DESIGN.md`](docs/DESIGN.md)** ("Premium Calm Enterprise"). Status implementasi tiap fitur:
 **[`docs/PROGRESS.md`](docs/PROGRESS.md)** (perbarui pada commit yang sama saat status berubah).
