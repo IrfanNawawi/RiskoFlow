@@ -14,3 +14,4 @@ export {
   EMPTY_RISK_FILTER,
   type RiskFilter,
 } from "./entities/filter";
+export { createReportPreset, type ReportPreset } from "./entities/preset";
