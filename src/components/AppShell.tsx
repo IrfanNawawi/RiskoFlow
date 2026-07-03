@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useAuthStore } from "@/features/auth";
+import { useStore } from "@/data/store";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { NewRiskModal } from "./NewRiskModal";
@@ -10,12 +11,18 @@ export function AppShell() {
   const [navOpen, setNavOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const authStatus = useAuthStore((s) => s.status);
+  // Punya minimal satu keanggotaan perusahaan? (store sudah ter-hidrasi saat shell render.)
+  const hasCompany = useStore((s) => s.myCompanies().length > 0);
 
   // Tutup drawer setiap kali pindah route (mobile/tablet).
   useEffect(() => setNavOpen(false), [pathname]);
 
   // Guard: hanya user terautentikasi yang boleh masuk shell (NFR-01; RLS = otoritas sesungguhnya).
   if (authStatus === "unauthenticated") return <Navigate to="/login" />;
+
+  // User terautentikasi tapi belum punya perusahaan (mis. hasil signup mandiri) → onboarding.
+  // Tanpa ini Topbar membaca activeCompany() yang undefined dan crash (reading 'name').
+  if (authStatus === "authenticated" && !hasCompany) return <Navigate to="/onboarding" />;
 
   return (
     <div className="min-h-screen bg-background-canvas p-2 md:p-3">

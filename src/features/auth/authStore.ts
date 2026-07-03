@@ -23,6 +23,16 @@ interface AuthState {
   /** Panggil sekali saat boot (lihat `AuthGate`). Mengembalikan fungsi cleanup. */
   initialize: () => void | (() => void);
   signInWithPassword: (email: string, password: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
+  /**
+   * Daftar akun baru (mode Supabase Auth). `name` disimpan ke metadata → dipakai
+   * trigger `handle_new_user` untuk seed profil `public.users`. Bila proyek mewajibkan
+   * konfirmasi email, sesi belum terbit (`needsConfirmation: true`).
+   */
+  signUpWithPassword: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<{ ok: true; needsConfirmation: boolean } | { ok: false; reason: string }>;
   /** Login mock sebagai user demo tertentu (mode env kosong). */
   signInAsMockUser: (userId: string) => void;
   signOut: () => Promise<void>;
@@ -85,6 +95,27 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ status: "authenticated", userId: u.id, email: u.email ?? null });
     }
     return { ok: true };
+  },
+
+  signUpWithPassword: async (email, password, name) => {
+    if (!isAuthEnabled) {
+      return { ok: false, reason: "Pendaftaran memerlukan Supabase aktif. Gunakan pilihan user demo." };
+    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name.trim() } },
+    });
+    if (error) return { ok: false, reason: error.message };
+    const u = data.user;
+    // Sesi langsung terbit (konfirmasi email mati) → set authenticated.
+    if (data.session && u) {
+      applyUser(u.id);
+      set({ status: "authenticated", userId: u.id, email: u.email ?? null });
+      return { ok: true, needsConfirmation: false };
+    }
+    // Konfirmasi email menyala → user harus verifikasi dulu.
+    return { ok: true, needsConfirmation: true };
   },
 
   signInAsMockUser: (userId) => {

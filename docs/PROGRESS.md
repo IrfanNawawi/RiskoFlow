@@ -40,7 +40,11 @@ PRD v1.6.1 status. Updated **2026-07-03**.
     bisa aktif sementara Auth ditunda. `true` (aktif di prod) → login email/password Supabase, sesi via
     `getSession`+`onAuthStateChange`, `auth.uid()`→`currentUserId`; default → **login demo**
     (pilih user, dipersist localStorage) agar app tetap dipakai. Logout di sidebar → `/login`
-  - `store.setCurrentUser` menjaga perusahaan aktif tetap milik user sesi; 5 unit test `authStore`
+  - **Signup mandiri** (`signUpWithPassword`): form daftar (nama+email+sandi) di `LoginPage`; nama →
+    metadata untuk trigger `handle_new_user`; dukung mode konfirmasi-email (notice "cek email")
+  - **Guard onboarding** di `AppShell`: user terautentikasi tanpa keanggotaan (`myCompanies()` kosong)
+    diarahkan ke `/onboarding` — cegah crash Topbar baca `activeCompany()` undefined
+  - `store.setCurrentUser` menjaga perusahaan aktif tetap milik user sesi; 6 unit test `authStore`
   - **`supabase/migrations/0002_auth_rls.sql` ter-apply:** policy permissive → berbasis `auth.uid()` +
     keanggotaan (helper SECURITY DEFINER `is_company_member`/`has_company_role`)
   - **`supabase/migrations/0003_handle_new_user.sql` ter-apply:** trigger `on_auth_user_created`
@@ -55,7 +59,8 @@ PRD v1.6.1 status. Updated **2026-07-03**.
 - **Remaining 🎯:**
   - [x] RLS per company_id via `auth.uid()` + membership (migrasi `0002`, ter-apply)
   - [ ] Verifikasi cross-company deny via pgTAP
-  - [ ] Invite via email (SMTP) — kini buat user Auth manual / signup + onboarding
+  - [x] Signup mandiri (daftar akun → onboarding buat perusahaan)
+  - [ ] Invite anggota ke perusahaan yang ada via email (SMTP) — kini admin buat/undang di mock
 
 ### FR-RISK: Risk Register — Identifikasi (§3.3)
 - **Status:** ✅ (full Clean Arch)

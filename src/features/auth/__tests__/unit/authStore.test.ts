@@ -51,4 +51,9 @@ describe("authStore (mock mode)", () => {
     const res = await useAuthStore.getState().signInWithPassword("a@b.id", "x");
     expect(res.ok).toBe(false);
   });
+
+  it("signUpWithPassword ditolak di mode mock", async () => {
+    const res = await useAuthStore.getState().signUpWithPassword("a@b.id", "secret6", "Budi");
+    expect(res.ok).toBe(false);
+  });
 });
