@@ -10,11 +10,15 @@ export function LoginPage() {
   const navigate = useNavigate();
   const status = useAuthStore((s) => s.status);
   const signInWithPassword = useAuthStore((s) => s.signInWithPassword);
+  const signUpWithPassword = useAuthStore((s) => s.signUpWithPassword);
   const signInAsMockUser = useAuthStore((s) => s.signInAsMockUser);
 
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
   // Slice mentah (referensi stabil dari Zustand) → derivasi via useMemo.
@@ -38,14 +42,31 @@ export function LoginPage() {
 
   if (status === "authenticated") return <Navigate to="/dashboard" />;
 
-  const onPasswordLogin = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setNotice("");
     setBusy(true);
+    if (mode === "signup") {
+      const result = await signUpWithPassword(email, password, name);
+      setBusy(false);
+      if (!result.ok) return setError(result.reason);
+      if (result.needsConfirmation) {
+        return setNotice("Akun dibuat. Cek email untuk konfirmasi, lalu masuk.");
+      }
+      // Sesi langsung terbit → guard AppShell mengarahkan ke onboarding (belum ada perusahaan).
+      return navigate({ to: "/dashboard" });
+    }
     const result = await signInWithPassword(email, password);
     setBusy(false);
     if (!result.ok) return setError(result.reason);
     navigate({ to: "/dashboard" });
+  };
+
+  const toggleMode = () => {
+    setMode((m) => (m === "signin" ? "signup" : "signin"));
+    setError("");
+    setNotice("");
   };
 
   const onMockLogin = (userId: string) => {
@@ -65,21 +86,34 @@ export function LoginPage() {
             </div>
             <div>
               <p className="font-display text-[18px] font-bold text-primary">RiskoFlow</p>
-              <p className="text-[11px] uppercase tracking-wide text-text-secondary">Masuk ke akun</p>
+              <p className="text-[11px] uppercase tracking-wide text-text-secondary">
+                {mode === "signup" ? "Daftar akun baru" : "Masuk ke akun"}
+              </p>
             </div>
           </div>
 
           {isAuthEnabled ? (
-            <form className="flex flex-col gap-4" onSubmit={onPasswordLogin}>
+            <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+              {mode === "signup" && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-semibold text-on-surface-variant">Nama lengkap</label>
+                  <input type="text" className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama Anda" autoComplete="name" required />
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-semibold text-on-surface-variant">Email</label>
                 <input type="email" className={field} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@perusahaan.id" autoComplete="email" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-semibold text-on-surface-variant">Kata sandi</label>
-                <input type="password" className={field} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required />
+                <input type="password" className={field} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={6} required />
               </div>
-              <Button type="submit" icon="login" disabled={busy}>{busy ? "Memproses…" : "Masuk"}</Button>
+              <Button type="submit" icon={mode === "signup" ? "person_add" : "login"} disabled={busy}>
+                {busy ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
+              </Button>
+              <button type="button" onClick={toggleMode} className="text-[13px] font-medium text-primary hover:underline">
+                {mode === "signup" ? "Sudah punya akun? Masuk" : "Belum punya akun? Daftar"}
+              </button>
             </form>
           ) : (
             <div className="flex flex-col gap-3">
@@ -112,6 +146,11 @@ export function LoginPage() {
           {error && (
             <p className="mt-4 flex items-center gap-1.5 rounded-[12px] bg-error-container px-3 py-2 text-[13px] font-medium text-on-error-container">
               <Icon name="error" size={16} /> {error}
+            </p>
+          )}
+          {notice && (
+            <p className="mt-4 flex items-center gap-1.5 rounded-[12px] bg-primary-container px-3 py-2 text-[13px] font-medium text-on-primary-container">
+              <Icon name="check_circle" size={16} /> {notice}
             </p>
           )}
         </div>

@@ -11,5 +11,13 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Paksa mode mock saat test, apa pun isi `.env` lokal (mis. VITE_SUPABASE_AUTH=true
+    // di dev/prod). Tanpa ini, kehadiran `.env` membuat isAuthEnabled true → test
+    // dual-mode mengambil cabang Supabase dan gagal.
+    env: {
+      VITE_SUPABASE_URL: "",
+      VITE_SUPABASE_ANON_KEY: "",
+      VITE_SUPABASE_AUTH: "",
+    },
   },
 });
