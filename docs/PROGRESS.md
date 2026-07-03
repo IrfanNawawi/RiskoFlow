@@ -1,8 +1,8 @@
 # RiskoFlow — Progress Tracker
 
-PRD v1.6.1 status. Updated **2026-07-02**.
+PRD v1.6.1 status. Updated **2026-07-03**.
 
-> **Dual-mode active:** Supabase optional (`VITE_SUPABASE_*` env). Fallback mock in-memory. DB-enforced invariants (severity/gate/RLS/audit) live in migrations. Auth still mock (`currentUserId`); RLS permissive. 
+> **Dual-mode active:** Supabase optional (`VITE_SUPABASE_*` env). Fallback mock in-memory. DB-enforced invariants (severity/gate/RLS/audit) live in migrations. **Supabase Auth aktif di prod** (`VITE_SUPABASE_AUTH=true`): login email/password, `auth.uid()` → `currentUserId`; migrasi `0002_auth_rls` (RLS `auth.uid()` + membership) & `0003_handle_new_user` (auto-seed profil) **ter-apply ke remote**. Mode mock (env kosong) tetap pakai login demo. 
 > Ref: [frontend-structure.md](../.claude/guidelines/frontend-structure.md) (Clean Arch), [PRD.md](PRD.md) (spec).
 
 ---
@@ -14,7 +14,7 @@ PRD v1.6.1 status. Updated **2026-07-02**.
 | Frontend stack (React 19/TS, TanStack, Tailwind v4, shadcn/ui) | ✅ | All deps installed |
 | Clean Architecture (domain/data/presentation + DI) | 🟡 | `risks`, `incidents`, `compliance`, `ai`, `dashboard`, `reports` full; `audit`/`onboarding`/`org` direct store access |
 | Code splitting, CI gates (typecheck/lint/test/build) | ✅ | Via Vite + Vitest |
-| Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; auth+Edge Fn 🎯 |
+| Supabase (Postgres + RLS + RPC + migrations) | 🟡 | Wired; **Auth aktif** + RLS `auth.uid()` ter-apply; Edge Fn 🎯 |
 | AI (Edge Fn + Gemini) | ✅ | Risk + mitigation drafts; gate kuota 🎯 |
 | Notifikasi (in-app + email) | 🟡 | In-app pusat notifikasi ✅; email + Cron/Queues 🎯 |
 
@@ -33,15 +33,19 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - [ ] Phone format ID via Zod + `format.ts` (butuh kolom `phone` + param RPC → 🎯 backend)
 
 ### FR-ORG: Departemen, User & RBAC (§3.2)
-- **Status:** ✅ (dept CRUD ✅, anggota & peran ✅, switcher ✅, Auth frontend ✅; RLS 🎯)
-- **Auth frontend (dual-mode, `src/features/auth/`):**
+- **Status:** ✅ (dept CRUD ✅, anggota & peran ✅, switcher ✅, Auth ✅; RLS `auth.uid()` ter-apply ✅)
+- **Auth (dual-mode, `src/features/auth/`):**
   - `AuthGate` (init sesi saat boot) + `/login` (`LoginPage`) + route guard di `AppShell`/onboarding
   - Flag `isAuthEnabled` (`VITE_SUPABASE_AUTH`) **terpisah** dari `isSupabaseConfigured`: DB/PostgREST
-    bisa aktif sementara Auth ditunda. `true` → login email/password Supabase; default → **login demo**
+    bisa aktif sementara Auth ditunda. `true` (aktif di prod) → login email/password Supabase, sesi via
+    `getSession`+`onAuthStateChange`, `auth.uid()`→`currentUserId`; default → **login demo**
     (pilih user, dipersist localStorage) agar app tetap dipakai. Logout di sidebar → `/login`
   - `store.setCurrentUser` menjaga perusahaan aktif tetap milik user sesi; 5 unit test `authStore`
-  - ⚠️ target `supabase/migrations/0002_auth_rls.sql`: policy permissive → berbasis `auth.uid()` +
-    keanggotaan (helper SECURITY DEFINER `is_company_member`/`has_company_role`) — belum bisa dijalankan di sini
+  - **`supabase/migrations/0002_auth_rls.sql` ter-apply:** policy permissive → berbasis `auth.uid()` +
+    keanggotaan (helper SECURITY DEFINER `is_company_member`/`has_company_role`)
+  - **`supabase/migrations/0003_handle_new_user.sql` ter-apply:** trigger `on_auth_user_created`
+    auto-seed profil `public.users` (`id = auth.uid()::text`) saat signup — prasyarat RLS 0002.
+    Membership tetap lewat onboarding (RPC `create_company_with_admin`) / undangan admin
 - **Structure:** `src/features/org/` (store-direct, seperti dashboard/reports) — page + validation + components
 - **Implemented:**
   - Halaman Organisasi (`/organisasi`): departemen + anggota & peran
@@ -49,8 +53,9 @@ PRD v1.6.1 status. Updated **2026-07-02**.
   - Undang anggota (email valid + multi-role D27) + ubah peran + keluarkan; guard last-admin (min 1 admin aktif)
   - Store actions + audit log per mutasi; cek peran UI (`can("admin")`) = UX; 7 unit test guard
 - **Remaining 🎯:**
-  - [ ] RLS per company_id + role check via `auth.claims()` (backend)
-  - [ ] Invite via email (SMTP) — kini buat user langsung di mock
+  - [x] RLS per company_id via `auth.uid()` + membership (migrasi `0002`, ter-apply)
+  - [ ] Verifikasi cross-company deny via pgTAP
+  - [ ] Invite via email (SMTP) — kini buat user Auth manual / signup + onboarding
 
 ### FR-RISK: Risk Register — Identifikasi (§3.3)
 - **Status:** ✅ (full Clean Arch)
@@ -189,9 +194,9 @@ PRD v1.6.1 status. Updated **2026-07-02**.
 ## Next Steps (Prioritized)
 
 **Tier 1 (unblock main features):**
-1. Auth: **frontend selesai** (login demo/Supabase, guard, logout, sesi) ✅ — sisa 🎯: aktifkan `VITE_SUPABASE_AUTH`,
-   set user Auth = `users.id`, swap scoping ke `auth.uid()`, invite flow via email
-2. Tighten RLS: migrasi `0002_auth_rls.sql` ditulis (permissive → `auth.uid()` + membership) — sisa 🎯: apply + pgTAP cross-company deny
+1. Auth: **aktif di prod** ✅ (login email/password Supabase, guard, logout, sesi, `auth.uid()` scoping,
+   trigger `handle_new_user` auto-seed profil) — sisa 🎯: invite flow via email (SMTP)
+2. Tighten RLS: migrasi `0002_auth_rls.sql` **ter-apply** (permissive → `auth.uid()` + membership) — sisa 🎯: pgTAP cross-company deny
 3. FR-MON cron: daily scan next_review_date, flag stale (Cron job)
 
 **Tier 2 (post-core):**

@@ -18,8 +18,9 @@ Web app pengelolaan manajemen risiko berbasis **ISO 31000:2018**, dibangun sesua
 > RPC atomik `create_company_with_admin`, gate ACCEPT FR-TREAT-3 & incident-close FR-INC-6,
 > trigger audit/auto-advance). **Tanpa `.env`, app otomatis fallback ke mock in-memory**
 > (`src/data/store.ts` + `seed.ts`) yang meniru kontrak yang sama — UI identik di kedua mode.
-> **Auth masih ditunda** (pakai `currentUserId` mock; RLS permissive). Edge Functions/Cron/Vault =
-> ⚠️ target.
+> **Auth aktif** dengan `VITE_SUPABASE_AUTH=true` (login email/password Supabase; `auth.uid()` →
+> `currentUserId`; RLS `auth.uid()`+membership & trigger `handle_new_user` ter-apply). Tanpa flag →
+> login demo mock. Edge Functions/Cron/Vault = ⚠️ target.
 
 ## Menjalankan
 

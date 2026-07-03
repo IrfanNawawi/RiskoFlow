@@ -22,7 +22,7 @@ fondasi shadcn); yang masih ramping hanyalah **backend** karena tak bisa di-prov
 
 | Aspek | Sekarang | Target PRD |
 |---|---|---|
-| Data/backend | **Dual-mode**: Supabase bila env terisi (`supabase/migrations` + `src/lib/supabase.ts`, RLS permissive, **Auth backend ditunda** — frontend auth ada, opt-in `VITE_SUPABASE_AUTH`), selain itu fallback **mock in-memory** (`src/data/store.ts` + `seed.ts`) | Supabase (Postgres + RLS + **Auth** + Edge Functions) |
+| Data/backend | **Dual-mode**: Supabase bila env terisi (`supabase/migrations` + `src/lib/supabase.ts`, **Auth aktif** + RLS `auth.uid()` ter-apply, opt-in `VITE_SUPABASE_AUTH`), selain itu fallback **mock in-memory** (`src/data/store.ts` + `seed.ts`) | Supabase (Postgres + RLS + **Auth** + Edge Functions) |
 | Router | **TanStack Router** (code-based di `main.tsx`, typed search params via Zod) | ✅ tercapai |
 | Package manager | **bun** (`bun.lockb`) | ✅ tercapai |
 | Form/validasi | **react-hook-form + Zod** (schema di `features/*/validation/`) | ✅ tercapai |
@@ -31,10 +31,11 @@ fondasi shadcn); yang masih ramping hanyalah **backend** karena tak bisa di-prov
 Saat membangun fitur: ikuti **layering & konvensi target**, tandai jelas mana yang **sudah ada**
 vs **⚠️ target**. Invariant kritis kini **DB-enforced di Supabase** (generated column severity/level,
 gate ACCEPT & incident-close, trigger audit & auto-advance review) **dan** tetap ditiru di mock store
-sebagai fallback. **Auth frontend sudah ada** (`src/features/auth/`: login demo/Supabase, `AuthGate`,
-guard, logout, sesi) — namun **Auth backend Supabase** masih **⚠️ target** (aktif via `VITE_SUPABASE_AUTH`;
-default login demo, RLS masih permissive — migrasi `auth.uid()` ditulis di `0002_auth_rls.sql` tapi belum
-di-apply). Sisanya **⚠️ target**: Edge Functions/Cron/Vault. Jangan menambah dependency baru tanpa konfirmasi user.
+sebagai fallback. **Auth sudah aktif** (`src/features/auth/`: login demo/Supabase, `AuthGate`, guard,
+logout, sesi). Di prod dengan `VITE_SUPABASE_AUTH=true`: login email/password Supabase, `auth.uid()` →
+`currentUserId`; RLS berbasis `auth.uid()`+membership (`0002_auth_rls.sql`) **ter-apply**, dan trigger
+`handle_new_user` (`0003`) auto-seed profil `public.users` saat signup. Tanpa flag → default login demo
+(mock). Sisanya **⚠️ target**: Edge Functions/Cron/Vault. Jangan menambah dependency baru tanpa konfirmasi user.
 
 **Mengaktifkan Supabase:** salin `.env.example` → `.env`, isi `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`;
 `supabase db push` (terapkan `supabase/migrations/`) + `supabase db reset` (seed). Tanpa env, app
@@ -174,10 +175,10 @@ Lihat `.claude/guidelines/frontend-structure.md` **§0** untuk **terpasang sekar
 
 **Ringkas yang sudah terpasang:** React 19, TanStack Router v1.170, TanStack Query v5.62, TanStack Table v8.21,
 react-hook-form v7.80, Zod v4.4, Zustand v5.0.2, Tailwind v4, shadcn/ui (foundation), date-fns v4, react-i18next v17,
-Sentry v10, `@supabase/supabase-js` v2.108 (PostgREST + RPC; **Auth ditunda**), Vitest, RTL, Playwright v1.61,
+Sentry v10, `@supabase/supabase-js` v2.108 (PostgREST + RPC + **Auth aktif**), Vitest, RTL, Playwright v1.61,
 Vite, TypeScript, ESLint (flat), Prettier.
 
-**Target PRD belum (infrastruktur, bukan lib npm):** Supabase **Auth**, Edge Functions, Cron, Vault.
+**Target PRD belum (infrastruktur, bukan lib npm):** Edge Functions, Cron, Vault (Supabase **Auth** ✅ aktif).
 
 **Jangan import** target lib sebelum terpasang — ingatkan user, pin exact versi.
 
