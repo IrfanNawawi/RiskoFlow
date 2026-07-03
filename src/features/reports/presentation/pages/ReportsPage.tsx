@@ -12,8 +12,10 @@ import {
   isRiskFilterActive,
   EMPTY_RISK_FILTER,
   type RiskFilter,
+  type ReportPreset,
 } from "@/features/reports/domain";
 import { useReportRegister } from "../hooks/useReportRegister";
+import { useReportPresetStore } from "../stores/reportPresetStore";
 import type { Risk, RiskLevel, RiskCategory, RiskStatus } from "@/data/types";
 
 const LEVELS: RiskLevel[] = ["EXTREME", "HIGH", "MEDIUM", "LOW"];
@@ -37,8 +39,21 @@ export function ReportsPage() {
 
   const [filter, setFilter] = useState<RiskFilter>(EMPTY_RISK_FILTER);
 
+  const presets = useReportPresetStore((s) => s.presets);
+  const savePreset = useReportPresetStore((s) => s.savePreset);
+  const removePreset = useReportPresetStore((s) => s.removePreset);
+
   const { data } = useReportRegister();
   const available = REPORT_COLUMNS.filter((c) => !dropped.includes(c.id));
+
+  const onSavePreset = () => {
+    const name = window.prompt("Nama preset laporan:")?.trim();
+    if (name) savePreset(name, dropped, filter);
+  };
+  const onLoadPreset = (preset: ReportPreset) => {
+    setDropped(preset.columnIds);
+    setFilter(preset.filter);
+  };
 
   // Builder baris ekspor dari entity Risk; resolver nama dari data referensi (bukan store).
   const buildRows = useMemo(() => {
@@ -107,8 +122,25 @@ export function ReportsPage() {
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-[18px] font-semibold">Custom Report Builder</h2>
-          <button className="text-[13px] font-semibold text-primary hover:underline">Panduan</button>
+          <button onClick={onSavePreset} className="flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:underline">
+            <Icon name="bookmark_add" size={16} /> Simpan preset
+          </button>
         </div>
+
+        {/* Preset tersimpan — muat ulang kombinasi kolom + filter (FR-DASH-3) */}
+        {presets.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-[12px] font-medium text-text-secondary">Preset:</span>
+            {presets.map((p) => (
+              <span key={p.id} className="flex items-center gap-1 rounded-full border border-border-hairline bg-surface py-1 pl-3 pr-1 text-[12px] font-medium text-on-surface-variant">
+                <button onClick={() => onLoadPreset(p)} className="hover:text-primary">{p.name}</button>
+                <button onClick={() => removePreset(p.id)} aria-label={`Hapus preset ${p.name}`} className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-error-container hover:text-error">
+                  <Icon name="close" size={13} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Filter nilai — menyaring risiko sebelum ekspor (FR-DASH-3) */}
         <div className="mb-4 flex flex-col gap-3 rounded-[16px] border border-border-hairline bg-surface-muted/50 p-4">
